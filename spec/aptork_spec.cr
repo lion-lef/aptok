@@ -10147,3 +10147,32 @@ describe "Aptork testing helpers" do
     mismatch.body.should eq("The activity actor does not match the outbox owner.")
   end
 end
+
+describe Aptork::RouteTemplate do
+  it "matches and expands simple identifier templates" do
+    template = Aptork::RouteTemplate.new("/users/{identifier}")
+    template.match("/users/alice").should eq({"identifier" => "alice"})
+    template.expand({"identifier" => "alice"}).should eq("/users/alice")
+  end
+
+  it "preserves a literal plus in a path segment when matching" do
+    # In a URL path a raw '+' is a literal character (RFC 3986 sub-delim), not a
+    # space as in application/x-www-form-urlencoded query strings. Matching must
+    # not turn '/users/c+lang' into the identifier 'c lang'.
+    template = Aptork::RouteTemplate.new("/users/{identifier}")
+    template.match("/users/c+lang").should eq({"identifier" => "c+lang"})
+  end
+
+  it "round-trips identifiers containing reserved characters through expand/match" do
+    template = Aptork::RouteTemplate.new("/users/{identifier}")
+    ["c+lang", "a b", "résumé"].each do |identifier|
+      path = template.expand({"identifier" => identifier})
+      template.match(path).should eq({"identifier" => identifier})
+    end
+  end
+
+  it "decodes percent-encoded spaces but keeps literal plus in trailing captures" do
+    template = Aptork::RouteTemplate.new("/files/{+path}")
+    template.match("/files/a+b/c%20d").should eq({"path" => "a+b/c d"})
+  end
+end

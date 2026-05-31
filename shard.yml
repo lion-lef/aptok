@@ -1,0 +1,13 @@
+name: aptork
+version: 0.1.0
+
+authors:
+  - Lefine Team
+
+description: Crystal ActivityPub federation toolkit inspired by Fedify, with ForgeFed and marketplace helpers.
+
+targets:
+  aptork:
+    main: src/aptork.cr
+
+crystal: ">= 1.12.0"

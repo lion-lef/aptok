@@ -1,0 +1,21 @@
+require "uri"
+require "digest/sha256"
+require "random/secure"
+require "set"
+require "log"
+require "../http/http"
+require "../vocabulary/vocabulary"
+require "../store/store"
+require "../telemetry"
+require "../transport"
+require "../remote/remote"
+require "../uri_template"
+require "./federation_types"
+require "./federation_builder"
+require "./federation_core"
+require "./federation_setup"
+require "./federation_routing"
+require "./federation_delivery"
+
+module Aptork
+end

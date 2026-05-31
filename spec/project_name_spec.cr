@@ -21,12 +21,22 @@ describe "project naming" do
     readme.should_not contain("Aptork")
   end
 
+  it "keeps documentation on the declarative setup API" do
+    readme = File.read("#{__DIR__}/../README.md")
+    parity = File.read("#{__DIR__}/../docs/FEDIFY_PARITY.md")
+
+    readme.should_not match(/\bset_[a-zA-Z0-9_]+/)
+    readme.should_not contain("->")
+    parity.should_not match(/\bset_[a-zA-Z0-9_]+/)
+    parity.should_not contain("->")
+  end
+
   it "keeps the example server type-checking" do
     example = File.read("#{__DIR__}/../examples/server.cr")
     example.should_not contain("Aptork")
     example.should_not contain("aptork")
-    example.should_not contain("set_inbox_listeners")
-    example.should_not contain("set_outbox_dispatcher")
+    example.should_not match(/\bset_[a-zA-Z0-9_]+/)
+    example.should_not contain("->")
 
     status = Process.run(
       "crystal",

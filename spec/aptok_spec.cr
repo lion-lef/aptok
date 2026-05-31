@@ -610,9 +610,12 @@ describe Aptok::Federation do
         ).as(Aptok::JsonMap?)
       end
 
-      outbox "/users/{identifier}/outbox", ->(ctx : Aptok::Context, identifier : String) do
-        [Aptok.note("#{ctx.get_actor_uri(identifier)}/notes/1", "Hello")]
-      end
+      outbox(
+        "/users/{identifier}/outbox",
+        Aptok::CollectionDispatcher.new do |ctx, identifier|
+          [Aptok.note("#{ctx.get_actor_uri(identifier)}/notes/1", "Hello")]
+        end
+      )
 
       object "Note", "/users/{identifier}/notes/{note_id}" do |ctx, params|
         Aptok.note(ctx.get_object_uri("Note", params), "Hello").as(Aptok::JsonMap?)
@@ -634,7 +637,7 @@ describe Aptok::Federation do
 
       collection "stars" do |stars|
         stars.item_type "Person"
-        stars.set_counter { |_ctx, _params| 1.as(Int32?) }
+        stars.counter { |_ctx, _params| 1.as(Int32?) }
       end
 
       liked "/users/{identifier}/liked" do |_ctx, _identifier|
@@ -688,6 +691,35 @@ describe Aptok::Federation do
     inbox_handled.should be_true
     outbox_handled.should be_true
     explicit.create_context.actor("alice").not_nil!["id"].as_s.should eq("https://explicit.example/users/alice")
+  end
+
+  it "accepts declarative aliases for federation setup hooks" do
+    queue = Aptok::InProcessMessageQueue.new
+    loader = Aptok::DocumentLoader.new { |_url| nil.as(Aptok::JsonMap?) }
+    provider = Aptok::DocumentGetProvider.new { |_url, _headers| {404, ""} }
+
+    federation = Aptok.federation("https://local.example") do
+      document_loader loader
+      context_loader loader
+      document_get_provider provider
+      document_cache
+      inbox_queue queue
+      outbox_queue queue
+      fanout_queue queue, threshold: 2
+      signature_keys { |_key_id| nil.as(Aptok::ActorKeyPair?) }
+      inbox_verifier { |_request, _activity| Aptok::VerificationResult.new(true) }
+      inbox_signature_verification
+      authorize_actor { |_ctx, _request, _verification, _identifier, _params| true }
+      on_unverified_activity { |_ctx, _activity, _result| nil.as(Aptok::Response?) }
+      permanent_failure_status_codes [404, 410, 451]
+      outbox_permanent_failures { |_ctx, _failure| nil }
+      outbox_errors { |_ctx, _failure| nil }
+      activity_transformer { |_ctx, _transform, activity| activity }
+      default_activity_transformers
+      undelivered_outbox_activity { |_ctx, _activity| nil }
+    end
+
+    federation.permanent_failure_status_codes.should contain(451)
   end
 
   it "accepts block callbacks in the federation DSL" do

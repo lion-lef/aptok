@@ -106,22 +106,26 @@ federation-managed misses such as unresolved WebFinger resources, and
 `on_unauthorized` can customize access-control denials.
 
 ```crystal
-response = federation.fetch(
-  Aptok::Request.new("GET", "/users/alice", headers: {"Accept" => "text/html"}),
-  on_not_found: ->(request : Aptok::Request) {
+fallbacks = Aptok::FetchOptions.new(
+  on_not_found: Aptok::RequestHandler.new do |request|
     app_route(request)
-  },
-  on_not_acceptable: ->(request : Aptok::Request) {
+  end,
+  on_not_acceptable: Aptok::RequestHandler.new do |request|
     response = app_route(request)
     response.status == 404 ? Aptok::Response.new(
       406,
       {"Content-Type" => Aptok::FEDIFY_TEXT_CONTENT_TYPE, "Vary" => "Accept, Signature"},
       "Not Acceptable"
     ) : response
-  },
-  on_unauthorized: ->(_request : Aptok::Request) {
+  end,
+  on_unauthorized: Aptok::RequestHandler.new do |_request|
     Aptok::Response.new(403, {"Content-Type" => "text/plain"}, "forbidden")
-  }
+  end
+)
+
+response = federation.fetch(
+  Aptok::Request.new("GET", "/users/alice", headers: {"Accept" => "text/html"}),
+  fallbacks
 )
 ```
 
@@ -130,14 +134,14 @@ Currently routed:
 - `GET`/`HEAD /.well-known/webfinger?resource=acct:user@example.com`
 - `GET`/`HEAD /.well-known/nodeinfo`
 - `GET`/`HEAD`/`POST /.well-known/apgateway/{did...}/{path}`
-- `GET`/`HEAD /nodeinfo/2.1` when `set_nodeinfo_dispatcher` is configured
-- actor GET/HEAD via `set_actor_dispatcher`
-- object GET/HEAD via `set_object_dispatcher`
-- outbox GET/HEAD via `set_outbox_dispatcher`
+- `GET`/`HEAD /nodeinfo/2.1` when `nodeinfo` is configured
+- actor GET/HEAD via `actor`
+- object GET/HEAD via `object`
+- outbox GET/HEAD via `outbox`
 - outbox page GET/HEAD via `?page=N&size=N`
 - followers/following/inbox/custom collection GET/HEAD via collection dispatchers
-- inbox POST via `set_actor_dispatcher` and `set_inbox_listeners`
-- outbox POST via `set_outbox_listeners`
+- inbox POST via `actor` and `inbox` listeners
+- outbox POST via `outbox` listeners
 
 ActivityPub GET routes perform Fedify-style `Accept` negotiation and return
 `406 Not Acceptable` when HTML or XHTML is the preferred media type, or when
@@ -192,14 +196,16 @@ properties. Use the matching `ctx.get_*_uri` and `ctx.get_actor_key_pairs`
 helper values in returned actors to keep route metadata consistent.
 
 ```crystal
-federation.set_actor_dispatcher("/users/{identifier}", ->(ctx : Aptok::Context, identifier : String) do
-  deleted_at = deleted_actor_timestamp(identifier)
-  if deleted_at
-    Aptok.tombstone(ctx.get_actor_uri(identifier), "Person", deleted_at).as(Aptok::JsonMap?)
-  else
-    nil
+federation = Aptok.federation("https://example.com") do
+  actor "/users/{identifier}" do |ctx, identifier|
+    deleted_at = deleted_actor_timestamp(identifier)
+    if deleted_at
+      Aptok.tombstone(ctx.get_actor_uri(identifier), "Person", deleted_at).as(Aptok::JsonMap?)
+    else
+      nil
+    end
   end
-end)
+end
 ```
 
 ## Collections
@@ -226,9 +232,8 @@ parameters are present.
 For scalable collections, register a cursor dispatcher:
 
 ```crystal
-federation.set_outbox_page_dispatcher(
-  "/users/{identifier}/outbox",
-  ->(ctx : Aptok::Context, identifier : String, cursor : String?, size : Int32) do
+federation = Aptok.federation("https://example.com") do
+  outbox_page "/users/{identifier}/outbox" do |ctx, identifier, cursor, size|
     items = load_outbox_items(identifier, cursor, size)
     Aptok::CollectionPageResult.new(
       items,
@@ -238,7 +243,7 @@ federation.set_outbox_page_dispatcher(
       first_cursor: "start"
     )
   end
-)
+end
 ```
 
 If an outbox cursor dispatcher returns `nil`, Aptok mirrors Fedify's
@@ -249,151 +254,119 @@ same server-side shape for followers, following, inbox, liked, featured,
 featured tags, and named custom collections:
 
 ```crystal
-federation.set_followers_dispatcher(
-  "/users/{identifier}/followers",
-  ->(_ctx : Aptok::Context, identifier : String) do
+federation = Aptok.federation("https://example.com") do
+  followers "/users/{identifier}/followers" do |_ctx, identifier|
     load_followers(identifier)
   end
-)
 
-# Cursor followers dispatchers can receive a normalized ?base-url= filter so
-# FEP-8fcf synchronization views can be filtered in storage instead of after
-# loading every follower. Aptok still applies an in-memory safety filter.
-federation.set_followers_dispatcher(
-  "/users/{identifier}/followers",
-  ->(_ctx : Aptok::Context, identifier : String, cursor : String?, size : Int32, base_url : String?) do
-    load_followers_page(identifier, cursor, size, base_url)
+  # Cursor followers dispatchers can receive a normalized ?base-url= filter so
+  # FEP-8fcf synchronization views can be filtered in storage instead of after
+  # loading every follower. Aptok still applies an in-memory safety filter.
+  followers(
+    "/users/{identifier}/followers",
+    Aptok::FilteredCursorCollectionDispatcher.new do |_ctx, identifier, cursor, size, base_url|
+      load_followers_page(identifier, cursor, size, base_url)
+    end
+  )
+
+  # If a cursor followers dispatcher returns nil for cursor nil, send_activity
+  # falls back to first_cursor and walks every page when collecting recipients.
+  followers(
+    "/users/{identifier}/followers",
+    Aptok::ParamCursorCollectionDispatcher.new do |_ctx, params, cursor, size|
+      cursor.nil? ? nil : load_followers_page(params["identifier"], cursor, size)
+    end
+  )
+
+  collection "followers" do |routes|
+    routes.first_cursor { |_ctx, _params| "".as(String?) }
   end
-)
 
-# If a cursor followers dispatcher returns nil for cursor nil, send_activity
-# falls back to first_cursor and walks every page when collecting recipients.
-federation.set_followers_dispatcher(
-  "/users/{identifier}/followers",
-  ->(_ctx : Aptok::Context, params : Hash(String, String), cursor : String?, size : Int32) do
-    cursor.nil? ? nil : load_followers_page(params["identifier"], cursor, size)
-  end
-)
-federation.set_collection_first_cursor("followers", ->(_ctx, _params) { "".as(String?) })
-
-federation.set_following_dispatcher(
-  "/users/{identifier}/following",
-  ->(_ctx : Aptok::Context, identifier : String) do
+  following "/users/{identifier}/following" do |_ctx, identifier|
     load_following(identifier)
   end
-)
 
-# Following, liked, featured, and featured-tags dispatchers also support the
-# same cursor page shape as Fedify's built-in actor collections.
-federation.set_following_dispatcher(
-  "/users/{identifier}/following",
-  ->(_ctx : Aptok::Context, identifier : String, cursor : String?, size : Int32) do
-    load_following_page(identifier, cursor, size)
-  end
-)
+  # Following, liked, featured, and featured-tags dispatchers also support the
+  # same cursor page shape as Fedify's built-in actor collections.
+  following(
+    "/users/{identifier}/following",
+    Aptok::CursorCollectionDispatcher.new do |_ctx, identifier, cursor, size|
+      load_following_page(identifier, cursor, size)
+    end
+  )
 
-federation.set_inbox_dispatcher(
-  "/users/{identifier}/inbox",
-  ->(_ctx : Aptok::Context, identifier : String) do
-    load_received_activities(identifier)
-  end
-)
+  inbox(
+    "/users/{identifier}/inbox",
+    Aptok::CollectionDispatcher.new do |_ctx, identifier|
+      load_received_activities(identifier)
+    end
+  )
 
-federation.set_liked_dispatcher(
-  "/users/{identifier}/liked",
-  ->(_ctx : Aptok::Context, identifier : String) do
+  liked "/users/{identifier}/liked" do |_ctx, identifier|
     load_liked_objects(identifier)
   end
-)
 
-federation.set_featured_dispatcher(
-  "/users/{identifier}/featured",
-  ->(_ctx : Aptok::Context, identifier : String) do
+  featured "/users/{identifier}/featured" do |_ctx, identifier|
     load_featured_objects(identifier)
   end
-)
 
-federation.set_featured_tags_dispatcher(
-  "/users/{identifier}/tags",
-  ->(_ctx : Aptok::Context, identifier : String) do
+  featured_tags "/users/{identifier}/tags" do |_ctx, identifier|
     load_featured_tags(identifier)
   end
-)
 
-federation.set_collection_dispatcher(
-  "bookmarks",
-  "/users/{identifier}/collections/bookmarks",
-  ->(_ctx : Aptok::Context, identifier : String) do
-    load_bookmarks(identifier)
+  collection "bookmarks", "/users/{identifier}/collections/bookmarks" do |_ctx, params|
+    load_bookmarks(params["identifier"])
   end
-)
 
-federation.set_ordered_collection_dispatcher(
-  "featured-archive",
-  "/users/{identifier}/collections/featured-archive",
-  ->(_ctx : Aptok::Context, identifier : String) do
-    load_featured_archive(identifier)
+  ordered_collection "featured-archive", "/users/{identifier}/collections/featured-archive" do |_ctx, params|
+    load_featured_archive(params["identifier"])
   end
-)
 
-federation.set_collection_dispatcher(
-  "repo-tags",
-  "/repos/{owner}/{repo}/tags",
-  ->(_ctx : Aptok::Context, params : Hash(String, String)) do
+  collection "repo-tags", "/repos/{owner}/{repo}/tags" do |_ctx, params|
     load_repo_tags(params["owner"], params["repo"])
   end
-)
 
-federation.set_collection_page_dispatcher(
-  "stars",
-  "/repos/{owner}/{repo}/stars",
-  ->(_ctx : Aptok::Context, params : Hash(String, String), cursor : String?, size : Int32) do
+  collection_page "stars", "/repos/{owner}/{repo}/stars" do |_ctx, params, cursor, size|
     load_star_page(params["owner"], params["repo"], cursor, size)
   end
-)
 
-federation
-  .set_collection_item_type("stars", "Person")
-  .set_collection_first_cursor("stars", ->(_ctx, _params) { "start" })
-  .set_collection_last_cursor("stars", ->(_ctx, _params) { "end" })
-  .set_collection_counter("stars", ->(_ctx, _params) { count_stars })
-
-federation.configure_collection("stars")
-  .item_type("Person")
-  .set_first_cursor(->(_ctx, _params) { "start" })
-  .set_last_cursor(->(_ctx, _params) { "end" })
-  .set_counter(->(_ctx, _params) { count_stars })
-  .filter(->(_ctx, item) {
-    item["id"].as_s.starts_with?("https://remote.example/")
-  })
-  .authorize(->(_ctx, _request, verification, _identifier, params) {
-    verification.verified && can_read_stars?(params["owner"], params["repo"])
-  })
+  collection "stars" do |stars|
+    stars.item_type "Person"
+    stars.first_cursor { |_ctx, _params| "start" }
+    stars.last_cursor { |_ctx, _params| "end" }
+    stars.counter { |_ctx, _params| count_stars }
+    stars.filter do |_ctx, item|
+      item["id"].as_s.starts_with?("https://remote.example/")
+    end
+    stars.authorize do |_ctx, _request, verification, _identifier, params|
+      verification.verified && can_read_stars?(params["owner"], params["repo"])
+    end
+  end
+end
 ```
 
-Built-in actor collections and `set_ordered_collection_dispatcher` return
-`OrderedCollection` / `OrderedCollectionPage`. `set_collection_dispatcher`
+Built-in actor collections and `ordered_collection` return
+`OrderedCollection` / `OrderedCollectionPage`. `collection`
 matches Fedify's unordered custom collection API and returns `Collection` /
 `CollectionPage`. Served custom collection document IDs use the same canonical
 origin as `ctx.get_collection_uri`. Array dispatchers support `page` and `size` query parameters.
 Page dispatchers receive all URI parameters plus `cursor` and `size`, and return
-`CollectionPageResult` for cursor pagination. Use
-`set_ordered_collection_page_dispatcher` for ordered cursor collections.
+`CollectionPageResult` for cursor pagination. Use `ordered_collection_page` for
+ordered cursor collections.
 If a cursor page dispatcher returns `nil`, Aptok now mirrors Fedify's
 `onNotFound` behavior and returns `404` for that collection request.
 Cursor collection links follow Fedify's request-URL behavior: `first`, `last`,
 `prev`, `next`, and page `partOf` preserve unrelated query parameters while
 replacing or removing only `cursor`.
-Collection metadata callbacks mirror Fedify's `setFirstCursor`, `setLastCursor`,
-`setCounter`, and `filterPredicate` shape for whole collection responses.
-For array and cursor dispatchers, `setCounter` controls root collection
+Collection metadata callbacks mirror Fedify's first-cursor, last-cursor,
+counter, and filter-predicate shape for whole collection responses.
+For array and cursor dispatchers, the counter callback controls root collection
 `totalItems`; page responses still describe the concrete page items. Filtered
 collections preserve the dispatcher/counter-provided `totalItems` rather than
 replacing it with the filtered item length, matching Fedify's separate counter
 and item-filtering behavior.
-`configure_collection` groups metadata, filtering, and authorization callbacks
-for a Fedify-style chain, while the direct `set_collection_*` methods remain
-available.
+The `collection "name" do |routes| ... end` block groups metadata, filtering,
+and authorization callbacks for a Fedify-style chain.
 
 ## Inbox Listeners
 
@@ -405,15 +378,17 @@ Register a specific activity type with a compact string such as `"Follow"` or
 activity. The legacy `on_any` helper remains available as an explicit wildcard.
 
 ```crystal
-federation.set_inbox_listeners("/users/{identifier}/inbox", "/inbox")
-  .on(Aptok::Vocab::Follow, ->(ctx : Aptok::Context, follow : Aptok::Vocab::Follow) do
+federation.inbox "/users/{identifier}/inbox", "/inbox" do |routes|
+  routes.on Aptok::Vocab::Follow do |ctx, follow|
     accept_follow(ctx, follow)
     nil
-  end)
-  .on("Activity", ->(_ctx : Aptok::Context, activity : Aptok::JsonMap) do
+  end
+
+  routes.on "Activity" do |_ctx, activity|
     audit_inbox_activity(activity)
     nil
-  end)
+  end
+end
 ```
 
 Aptok normalizes expanded type IDs before matching and also matches ActivityPub
@@ -437,16 +412,18 @@ actor outbox. Aptok mirrors that shape with local authorization and typed
 activity handlers:
 
 ```crystal
-federation.set_outbox_listeners("/users/{identifier}/outbox")
-  .authorize(->(ctx : Aptok::Context, identifier : String) do
+federation.outbox "/users/{identifier}/outbox" do |routes|
+  routes.authorize do |ctx, identifier|
     token = ctx.inbound_request.try(&.headers["Authorization"]?)
     token == "Bearer #{identifier}"
-  end)
-  .on("Create", ->(ctx : Aptok::Context, activity : Aptok::JsonMap) do
+  end
+
+  routes.on "Create" do |ctx, activity|
     persist_outbox_activity(ctx.identifier, activity)
     ctx.send_activity(ctx.identifier.not_nil!, "followers", activity)
     nil
-  end)
+  end
+end
 ```
 
 Outbox POST authorization is local application logic; Aptok does not apply
@@ -486,10 +463,11 @@ by default when the federation has a KV store:
 store = Aptok::MemoryKvStore.new
 federation = Aptok::Federation.create("https://example.com", kv: store)
 
-federation.set_inbox_listeners("/users/{identifier}/inbox", "/inbox")
-  .on("Create", ->(_ctx : Aptok::Context, _activity : Aptok::JsonMap) do
+federation.inbox "/users/{identifier}/inbox", "/inbox" do |routes|
+  routes.on "Create" do |_ctx, _activity|
     nil
-  end)
+  end
+end
 ```
 
 The default strategy is `per-inbox`, matching Fedify's current behavior: the
@@ -498,16 +476,17 @@ inbox. Use `with_idempotency` to change TTL, or use `per-origin` or `global`
 for broader deduplication:
 
 ```crystal
-federation.set_inbox_listeners("/users/{identifier}/inbox", "/inbox")
-  .with_idempotency("per-origin")
+federation.inbox "/users/{identifier}/inbox", "/inbox" do |routes|
+  routes.with_idempotency "per-origin"
+end
 ```
 
 Custom strategies can return a cache key or `nil` to skip idempotency for a
 specific activity:
 
 ```crystal
-federation.set_inbox_listeners("/users/{identifier}/inbox", "/inbox")
-  .with_idempotency(Time::Span.new(hours: 24), ->(ctx : Aptok::Context, activity : Aptok::JsonMap) do
+federation.inbox "/users/{identifier}/inbox", "/inbox" do |routes|
+  routes.with_idempotency Time::Span.new(hours: 24) do |ctx, activity|
     if activity["type"]?.try(&.as_s?) == "Follow"
       nil
     else
@@ -515,7 +494,8 @@ federation.set_inbox_listeners("/users/{identifier}/inbox", "/inbox")
       inbox = ctx.recipient_identifier || "shared"
       id ? "#{ctx.origin}\n#{id}\n#{inbox}" : nil
     end
-  end)
+  end
+end
 ```
 
 Inbox listener contexts expose `ctx.recipient_identifier` for personal inbox
@@ -536,16 +516,18 @@ federation = Aptok::Federation.create(
   inbox_retry_policy: policy
 )
 
-federation.set_inbox_listeners("/users/{identifier}/inbox", "/inbox")
-  .with_idempotency
-  .on("Create", ->(_ctx : Aptok::Context, activity : Aptok::JsonMap) do
+federation.inbox "/users/{identifier}/inbox", "/inbox" do |routes|
+  routes.with_idempotency
+  routes.on "Create" do |_ctx, activity|
     handle_create(activity)
     nil
-  end)
-  .on_error(->(ctx : Aptok::Context, error : Exception) do
+  end
+
+  routes.on_error do |ctx, error|
     log_inbox_error(ctx.recipient_identifier, error)
     nil
-  end)
+  end
+end
 
 federation.create_context.process_queued_inbox_activities(limit: 10)
 ```
@@ -604,14 +586,15 @@ rewriting the activity payload. Aptok mirrors that shape with
 `Context#forward_activity`:
 
 ```crystal
-federation.set_inbox_listeners("/users/{identifier}/inbox", "/inbox")
-  .on("Create", ->(ctx : Aptok::Context, activity : Aptok::JsonMap) do
+federation.inbox "/users/{identifier}/inbox", "/inbox" do |routes|
+  routes.on "Create" do |ctx, activity|
     ctx.forward_activity(
       activity,
       Aptok::ForwardActivityOptions.new(skip_if_unsigned: true)
     )
     nil
-  end)
+  end
+end
 ```
 
 The automatic overload reads local actor ids from top-level `to`, `cc`, and
@@ -669,18 +652,18 @@ Inbox verification is opt-in while the signature stack is still evolving. Apps
 can attach a verifier and an unverified-activity callback:
 
 ```crystal
-federation.set_inbox_verifier(->(request : Aptok::Request, activity : Aptok::JsonMap) do
+federation.inbox_verifier do |request, activity|
   if Aptok::Signatures.verified_by_headers?(request)
     Aptok::VerificationResult.new(true)
   else
     Aptok::VerificationResult.new(false, "missing or invalid signature")
   end
-end)
+end
 
-federation.on_unverified_activity(->(_ctx : Aptok::Context, activity : Aptok::JsonMap, result : Aptok::VerificationResult) do
+federation.on_unverified_activity do |_ctx, activity, result|
   puts result.reason
   nil.as(Aptok::Response?)
-end)
+end
 ```
 
 The same callback can be registered from the inbox listener chain. If it returns
@@ -688,12 +671,13 @@ a `Response`, Aptok uses it instead of the default `401` response; returning
 `nil` preserves the default challenge response:
 
 ```crystal
-federation.set_inbox_listeners("/users/{identifier}/inbox", "/inbox")
-  .on("Create", create_listener)
-  .on_unverified_activity(->(_ctx : Aptok::Context, activity : Aptok::JsonMap, result : Aptok::VerificationResult) do
+federation.inbox "/users/{identifier}/inbox", "/inbox" do |routes|
+  routes.on "Create", create_listener
+  routes.on_unverified_activity do |_ctx, activity, result|
     quarantine(activity, result)
     Aptok::Response.new(202, {"Content-Type" => "text/plain"}, "quarantined").as(Aptok::Response?)
-  end)
+  end
+end
 ```
 
 `Aptok::Signatures` currently supports Cavage-style Signature header parsing,
@@ -781,16 +765,16 @@ Integrity Proofs, RFC 9421 `Signature-Input`/`Content-Digest`, or the legacy RSA
 `activity.actor` by default:
 
 ```crystal
-federation.set_signature_key_resolver(->(key_id : String) do
+federation.signature_keys do |key_id|
   key = fetch_or_load_remote_key(key_id)
   key ? Aptok::ActorKeyPair.new(
     id: key.id,
     owner: key.owner,
     public_key_pem: key.public_key_pem
   ).as(Aptok::ActorKeyPair?) : nil
-end)
+end
 
-federation.enable_inbox_signature_verification(
+federation.inbox_signature_verification(
   Aptok::InboxSignatureOptions.new(
     require_actor_key_owner: true,
     challenge_policy: Aptok::InboxChallengePolicy.new(
@@ -811,11 +795,11 @@ failures are not challenged, because signing with different parameters cannot
 fix impersonation. If `request_nonce` is enabled, Aptok stores a one-time nonce
 in the configured KV store and consumes it when a valid retry signature arrives.
 
-`set_signature_key_resolver` enables verification with default options for
-convenience. Use `enable_inbox_signature_verification` when you want to make the
+`signature_keys` enables verification with default options for convenience. Use
+`inbox_signature_verification` when you want to make the
 policy explicit or relax actor/key-owner matching for a compatibility test.
-Manual `set_inbox_verifier` callbacks take precedence over the built-in
-resolver path.
+Manual `inbox_verifier` callbacks take precedence over the built-in resolver
+path.
 
 ## Access Control
 
@@ -824,30 +808,27 @@ registering authorizer predicates. The predicate receives the signed request
 verification result and can decide based on `signer_actor`:
 
 ```crystal
-federation.set_signature_key_resolver(->(key_id : String) do
+federation.signature_keys do |key_id|
   resolve_remote_key(key_id)
-end)
+end
 
-federation.set_actor_authorizer(
-  ->(_ctx : Aptok::Context,
-     _request : Aptok::Request,
-     verification : Aptok::VerificationResult,
-     identifier : String?,
-     _params : Hash(String, String)) do
-    verification.verified &&
-      !!verification.signer_actor &&
-      !blocked?(identifier, verification.signer_actor)
-  end
-)
+federation.authorize_actor do |_ctx, _request, verification, identifier, _params|
+  verification.verified &&
+    !!verification.signer_actor &&
+    !blocked?(identifier, verification.signer_actor)
+end
 
-federation.configure_object("Ticket")
-  .authorize(->(_ctx, _request, verification, _identifier, params) do
+federation.object "Ticket" do |ticket|
+  ticket.authorize do |_ctx, _request, verification, _identifier, params|
     verification.verified && can_read_ticket?(params["repo"], verification.signer_actor)
-  end)
+  end
+end
 
-federation.set_collection_authorizer("featured", ->(_ctx, _request, verification, identifier, _params) do
-  verification.verified && can_read_featured?(identifier, verification.signer_actor)
-end)
+federation.collection "featured" do |featured|
+  featured.authorize do |_ctx, _request, verification, identifier, _params|
+    verification.verified && can_read_featured?(identifier, verification.signer_actor)
+  end
+end
 ```
 
 If an authorizer returns `false`, Aptok responds with `401 Unauthorized` by
@@ -870,14 +851,12 @@ loader for mutual authorized fetch. These helpers return `nil` for unsigned,
 invalid, or non-request contexts:
 
 ```crystal
-federation.set_actor_authorizer(
-  ->(ctx : Aptok::Context, _request, _verification, _identifier, _params) do
-    owner = ctx.get_signed_key_owner_actor(
-      Aptok::GetSignedKeyOptions.new(document_loader: instance_loader)
-    )
-    owner.try(&.id) == "https://remote.example/users/bob"
-  end
-)
+federation.authorize_actor do |ctx, _request, _verification, _identifier, _params|
+  owner = ctx.get_signed_key_owner_actor(
+    Aptok::GetSignedKeyOptions.new(document_loader: instance_loader)
+  )
+  owner.try(&.id) == "https://remote.example/users/bob"
+end
 
 person = ctx.get_signed_key_owner(Aptok::Vocab::Person)
 ```
@@ -885,11 +864,11 @@ person = ctx.get_signed_key_owner(Aptok::Vocab::Person)
 ## Actor Key Pairs
 
 Fedify uses actor key-pair dispatchers to expose public keys and sign outbound
-delivery. Aptok mirrors that shape with `set_key_pairs_dispatcher` and
+delivery. Aptok mirrors that shape with `key_pairs` and
 `Context#get_actor_key_pairs`:
 
 ```crystal
-federation.set_key_pairs_dispatcher(->(ctx : Aptok::Context, identifier : String) do
+federation.key_pairs do |ctx, identifier|
   owner = ctx.get_actor_uri(identifier)
   [
     Aptok::ActorKeyPair.new(
@@ -899,7 +878,7 @@ federation.set_key_pairs_dispatcher(->(ctx : Aptok::Context, identifier : String
       private_key_pem: load_private_key(identifier)
     ),
   ]
-end)
+end
 ```
 
 The dispatcher receives a context whose
@@ -1023,8 +1002,8 @@ still using the normal actor dispatcher. This is useful for instance, bot,
 relay, ForgeFed, or marketplace service actors:
 
 ```crystal
-federation.set_actor_dispatcher("/users/{identifier}", actor_dispatcher)
-federation.map_actor_alias("/bot", "bot")
+federation.actor "/users/{identifier}", actor_dispatcher
+federation.actor_alias "/bot", "bot"
 
 ctx.get_actor_uri("bot") # "https://example.com/bot"
 ```
@@ -1037,13 +1016,13 @@ the registered URI template and `Context#object(type, params)` can dispatch a
 local object by all URI parameters:
 
 ```crystal
-federation.set_object_dispatcher("Ticket", "/repos/{repo}/tickets/{ticket_id}", ->(ctx, values) do
+federation.object "Ticket", "/repos/{repo}/tickets/{ticket_id}" do |ctx, values|
   Aptok.forgefed_ticket(
     ctx.get_object_uri("Ticket", values),
     "Bug",
     "Fix it"
   )
-end)
+end
 
 ticket = ctx.object("Ticket", {"repo" => "aptok", "ticket_id" => "42"})
 ```
@@ -1052,12 +1031,12 @@ Like Fedify's `ctx.getObjectUri(Note, values)`, Aptok also accepts typed
 vocabulary classes:
 
 ```crystal
-federation.set_object_dispatcher("Note", "/users/{identifier}/notes/{note_id}", ->(ctx, values) do
+federation.object "Note", "/users/{identifier}/notes/{note_id}" do |ctx, values|
   Aptok.note(
     ctx.get_object_uri(Aptok::Vocab::Note, values),
     "Hello"
   )
-end)
+end
 
 note = ctx.get_object(Aptok::Vocab::Note, {
   "identifier" => "alice",
@@ -1119,13 +1098,13 @@ as raw `JsonMap` helpers in Aptok. Configure a document loader when you want to
 control fetching, caching, tests, or authenticated fetch:
 
 ```crystal
-federation.set_document_loader(->(url : String) do
+federation.document_loader do |url|
   response = HTTP::Client.get(
     url,
     headers: HTTP::Headers{"Accept" => Aptok::FEDERATION_JSONLD_CONTENT_TYPE}
   )
   response.success? ? JSON.parse(response.body).as_h : nil
-end)
+end
 ```
 
 Like Fedify, contexts expose both `document_loader` and `context_loader`. The
@@ -1152,17 +1131,18 @@ Use the metadata loader when your integration needs response status, headers,
 and content type in addition to parsed JSON:
 
 ```crystal
-metadata_loader = Aptok::Remote.document_loader_with_metadata(->(url : String, headers : HTTP::Headers) do
+metadata_provider = Aptok::MetadataDocumentGetProvider.new do |url, headers|
   response = HTTP::Client.get(url, headers: headers)
   {response.status_code, response.body, response.headers}
-end)
+end
+metadata_loader = Aptok::Remote.document_loader_with_metadata(metadata_provider)
 
 document = metadata_loader.call("https://remote.example/users/alice")
 document.try(&.content_type)
 document.try(&.headers)
 
 legacy_loader = Aptok::Remote.json_document_loader(metadata_loader)
-federation.set_document_loader(legacy_loader)
+federation.document_loader legacy_loader
 ```
 
 The built-in public and authenticated document loaders reject private-network
@@ -1201,8 +1181,7 @@ federation = Aptok::Federation.create(
 )
 ```
 
-Custom loaders installed with `set_document_loader` are responsible for their
-own fetch policy.
+Custom federation document loaders are responsible for their own fetch policy.
 
 Like Fedify's `lookupObject()`, `LookupObjectOptions` can carry a per-call
 loader. The context helpers use this loader for lookup and object verification
@@ -1245,10 +1224,10 @@ loader = Aptok::Remote.kv_cache(
   store,
   Aptok::DocumentCacheOptions.new(ttl: Time::Span.new(minutes: 10))
 )
-federation.set_document_loader(loader)
+federation.document_loader loader
 
 # Or wrap the federation's current loader with its configured KV store.
-federation.enable_document_cache(ttl: Time::Span.new(minutes: 10))
+federation.document_cache(ttl: Time::Span.new(minutes: 10))
 ```
 
 Only successful JSON documents are cached by default. Authenticated document
@@ -1289,19 +1268,21 @@ mailto = ctx.lookup_webfinger("mailto:juliet@example.com?subject=Hi")
 ```
 
 ```crystal
-federation.set_document_get_provider(remote_get_provider)
-federation.set_key_pairs_dispatcher(->(ctx : Aptok::Context, identifier : String) do
+federation.document_get_provider remote_get_provider
+federation.key_pairs do |ctx, identifier|
   load_actor_keys(ctx.get_actor_uri(identifier))
-end)
+end
 
-federation.set_inbox_listeners("/users/{identifier}/inbox", "/inbox")
-  .set_shared_key_dispatcher(->(_ctx : Aptok::Context) do
+federation.inbox "/users/{identifier}/inbox", "/inbox" do |routes|
+  routes.shared_key do |_ctx|
     {identifier: "instance"}.as(Aptok::SharedInboxKey?)
-  end)
-  .on("Create", ->(ctx : Aptok::Context, activity : Aptok::JsonMap) do
+  end
+
+  routes.on "Create" do |ctx, activity|
     object = ctx.lookup_object(activity["object"].as_s)
     offers = ctx.traverse_collection("https://market.example/offers")
-  end)
+  end
+end
 ```
 
 Lookup supports direct object URLs, fediverse handles, and `acct:` URIs:
@@ -1761,12 +1742,12 @@ recipient = Aptok.recipient_from_actor(
 
 The sender can also be passed in the Fedify-style identity shape. Use
 `{identifier: "alice"}` when the internal actor identifier is already known, or
-`{username: "alice"}` to resolve a public handle through `map_handle` first:
+`{username: "alice"}` to resolve a public handle through `handles` first:
 
 ```crystal
-federation.map_handle(->(_ctx : Aptok::Context, username : String) do
+federation.handles do |_ctx, username|
   username == "alice" ? "user-123" : nil
-end)
+end
 
 ctx.send_activity({username: "alice"}, [recipient], activity)
 ctx.send_activity({identifier: "user-123"}, [recipient], activity)
@@ -1778,7 +1759,7 @@ values, and actor arrays.
 
 Like Fedify, Aptok rejects outgoing sends whose transformed activity has no
 `id`/`@id` or `actor`, whether the delivery is immediate or queued. Install
-`auto_id_assigner` or `add_default_activity_transformers` when you want Aptok
+`auto_id_assigner` or call `default_activity_transformers` when you want Aptok
 to assign local ids before validation.
 
 Like Fedify's sender key-pair form, explicit RSA/Ed25519 key pairs can also be
@@ -1811,8 +1792,8 @@ sender because key-pair senders do not imply a local followers collection.
 Key-pair senders can use explicit `Recipient` values, raw ActivityPub actor
 documents, typed `Aptok::Vocab::Actor` values, or arrays of either actor shape.
 
-When followers are exposed through `set_followers_dispatcher`, activities can be
-sent to the followers collection directly:
+When followers are exposed through `followers`, activities can be sent to the
+followers collection directly:
 
 ```crystal
 result = ctx.send_activity(
@@ -1894,13 +1875,14 @@ signs the expanded outbound deliveries with the provided sender identity:
 
 ```crystal
 outbox_queue = Aptok::InProcessMessageQueue.new
-fanout_queue = Aptok::InProcessMessageQueue.new
+fanout_tasks = Aptok::InProcessMessageQueue.new
 
 federation = Aptok::Federation.create(
   "https://example.com",
   transport,
   outbox_queue: outbox_queue
-).configure_fanout_queue(fanout_queue, threshold: 100)
+)
+federation.fanout_queue fanout_tasks, threshold: 100
 
 result = ctx.send_activity(
   "alice",
@@ -1958,50 +1940,48 @@ federation = Aptok::Federation.create(
   permanent_failure_status_codes: [404, 410, 451]
 )
 
-federation.set_permanent_failure_status_codes([404, 410, 451])
+federation.permanent_failure_status_codes [404, 410, 451]
 ```
 
 Register a handler to remove stale followers or update local delivery state:
 
 ```crystal
-federation.set_outbox_permanent_failure_handler(
-  ->(_ctx : Aptok::Context, failure : Aptok::OutboxPermanentFailure) do
-    remove_followers_for_inbox(failure.inbox, failure.actor_ids)
-    nil
-  end
-)
+federation.outbox_permanent_failures do |_ctx, failure|
+  remove_followers_for_inbox(failure.inbox, failure.actor_ids)
+  nil
+end
 ```
 
 For transient delivery failures, register an outbox error handler. It is called
 for each failed queued attempt that will continue through the retry policy:
 
 ```crystal
-federation.set_outbox_error_handler(
-  ->(_ctx : Aptok::Context, failure : Aptok::OutboxDeliveryFailure) do
-    log_delivery_retry(failure.inbox, failure.status_code, failure.attempts)
-    nil
-  end
-)
+federation.outbox_errors do |_ctx, failure|
+  log_delivery_retry(failure.inbox, failure.status_code, failure.attempts)
+  nil
+end
 ```
 
 For errors raised by local outbox listeners themselves, use the Fedify-style
 listener-scoped handler:
 
 ```crystal
-federation.set_outbox_listeners("/users/{identifier}/outbox")
-  .on("Create", ->(_ctx, _activity) do
+federation.outbox "/users/{identifier}/outbox" do |routes|
+  routes.on "Create" do |_ctx, _activity|
     raise "could not persist local side effect"
-  end)
-  .on_error(->(ctx : Aptok::Context, error : Exception) do
+  end
+
+  routes.on_error do |ctx, error|
     log_outbox_listener_error(ctx.outbox_identifier, error)
     nil
-  end)
+  end
+end
 ```
 
 You can also attach queueing after creation:
 
 ```crystal
-federation.configure_outbox_queue(queue, retry_policy: policy)
+federation.outbox_queue queue, retry_policy: policy
 ```
 
 Activity transformers mirror Fedify's outgoing compatibility hook. They run
@@ -2009,12 +1989,10 @@ once for each outbound activity batch, before Object Integrity Proofs and before
 immediate delivery or queue serialization:
 
 ```crystal
-federation.add_activity_transformer(
-  ->(_ctx : Aptok::Context, transform : Aptok::ActivityTransformContext, activity : Aptok::JsonMap) do
-    activity["audience"] = Aptok.json(transform.recipients.map(&.id))
-    activity
-  end
-)
+federation.activity_transformer do |_ctx, transform, activity|
+  activity["audience"] = Aptok.json(transform.recipients.map(&.id))
+  activity
+end
 ```
 
 The transformer receives a deep JSON copy of the outbound activity, so callers'
@@ -2025,13 +2003,13 @@ Aptok includes Fedify-style default compatibility transformers for outbound
 activities:
 
 ```crystal
-federation.add_default_activity_transformers
+federation.default_activity_transformers
 
 # Or install them individually.
-federation.add_activity_transformer(Aptok::Federation.auto_id_assigner)
-federation.add_activity_transformer(Aptok::Federation.actor_dehydrator)
-federation.add_activity_transformer(Aptok::Federation.public_audience_normalizer)
-federation.add_activity_transformer(Aptok::Federation.attachment_array_normalizer)
+federation.activity_transformer Aptok::Federation.auto_id_assigner
+federation.activity_transformer Aptok::Federation.actor_dehydrator
+federation.activity_transformer Aptok::Federation.public_audience_normalizer
+federation.activity_transformer Aptok::Federation.attachment_array_normalizer
 ```
 
 `auto_id_assigner` assigns a local fragment ID to outgoing activities that do
@@ -2081,9 +2059,9 @@ mocked_ctx = Aptok::Testing.create_context(
   Aptok::Request.new("GET", "/users/alice"),
   recipient_identifier: "alice",
   context_data: Aptok.json({"tenant" => "test"}),
-  document_loader: ->(url : String) {
+  document_loader: Aptok::DocumentLoader.new do |url|
     Aptok::JsonMap{"id" => Aptok.json(url)}.as(Aptok::JsonMap?)
-  }
+  end
 )
 
 inbox_ctx = Aptok::Testing.create_inbox_context(federation, "alice")
@@ -2127,10 +2105,10 @@ activity, Aptok emits a warning on `aptok.federation.outbox`. Applications can
 also observe that condition directly:
 
 ```crystal
-federation.on_undelivered_outbox_activity(->(ctx : Aptok::Context, activity : Aptok::JsonMap) do
+federation.undelivered_outbox_activity do |ctx, activity|
   log_unfederated_outbox_post(ctx.outbox_identifier, activity["id"]?)
   nil
-end)
+end
 ```
 
 ## Transport and Signatures
@@ -2494,30 +2472,30 @@ json = Aptok.nodeinfo_to_json(nodeinfo) if nodeinfo
 Applications can override discovery responses in the Fedify style:
 
 ```crystal
-federation.map_handle(->(_ctx : Aptok::Context, username : String) do
+federation.handles do |_ctx, username|
   lookup_user_id_by_handle(username)
-end)
+end
 
-federation.map_alias(->(_ctx : Aptok::Context, resource : String) do
+federation.aliases do |_ctx, resource|
   lookup_user_id_by_profile_url(resource)
-end)
+end
 
-federation.map_alias(->(_ctx : Aptok::Context, resource : String) do
+federation.aliases do |_ctx, resource|
   # Fedify-style aliases may return either an internal identifier directly
-  # or a username that is resolved through `map_handle`.
+  # or a username that is resolved through `handles`.
   resource == "https://example.com/@alice" ? {username: "alice"} : nil
-end)
+end
 
-federation.set_webfinger_links_dispatcher(->(_ctx : Aptok::Context, resource : String) do
+federation.webfinger_links do |_ctx, resource|
   [
     Aptok::JsonMap{
       "rel"      => Aptok.json("http://ostatus.org/schema/1.0/subscribe"),
       "template" => Aptok.json("https://example.com/authorize_interaction?uri={uri}"),
     },
   ]
-end)
+end
 
-federation.set_webfinger_dispatcher(->(_ctx : Aptok::Context, resource : String, identifier : String) do
+federation.webfinger do |_ctx, resource, identifier|
   Aptok.webfinger_jrd(
     resource,
     "https://example.com/users/#{identifier}",
@@ -2525,15 +2503,15 @@ federation.set_webfinger_dispatcher(->(_ctx : Aptok::Context, resource : String,
       "https://example.com/ns#role" => Aptok.json("maintainer"),
     }
   ).as(Aptok::JsonMap?)
-end)
+end
 
-federation.set_nodeinfo_dispatcher("/nodeinfo/custom", ->(_ctx : Aptok::Context) do
+federation.nodeinfo "/nodeinfo/custom" do |_ctx|
   Aptok.nodeinfo(
     "my-app",
     "1.0.0",
     metadata: Aptok::JsonMap{"nodeName" => Aptok.json("My node")}
   )
-end)
+end
 ```
 
 WebFinger accepts URI-form resources, returns Fedify-style plain-text `400`

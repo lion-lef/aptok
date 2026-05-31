@@ -19,12 +19,12 @@ The columns mean:
 | Type-safe Activity vocabulary objects | ✅ | `src/vocabulary/*` |
 | `Federation` / `Context` objects | ✅ | `src/federation/*` |
 | Crystal-style federation setup DSL | ✅ | `Aptok.federation` |
-| Actor dispatcher | ✅ | `set_actor_dispatcher` |
-| Object dispatcher | ✅ | `set_object_dispatcher` |
-| Outbox dispatcher | ✅ | `set_outbox_dispatcher` |
+| Actor dispatcher | ✅ | `actor` |
+| Object dispatcher | ✅ | `object` |
+| Outbox dispatcher | ✅ | `outbox` |
 | Collection dispatchers (followers/following/inbox/custom) | ✅ | `src/federation/federation_routing*` |
 | Cursor & paginated collections | ✅ | `paginated_collection`, `cursor_collection*` |
-| Typed inbox listeners | ✅ | `set_inbox_listeners(...).on(...)` |
+| Typed inbox listeners | ✅ | `inbox ... do |routes| routes.on ... end` |
 | Inbox idempotency | ✅ | `with_idempotency` |
 | `Context#send_activity` delivery | ✅ | `src/federation/federation_context_delivery*` |
 | Followers-recipient expansion | ✅ | `src/federation/federation_delivery*` |

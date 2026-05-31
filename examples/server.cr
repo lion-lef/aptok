@@ -18,24 +18,26 @@ federation = Aptok.federation(origin) do
     ).as(Aptok::JsonMap?)
   end
 
-  collection "outbox", "/users/{identifier}/outbox" do |ctx, params|
-    identifier = params["identifier"]
-    note = Aptok.object(
-      "Note",
-      "#{ctx.get_outbox_uri(identifier)}/hello",
-      Aptok::JsonMap{
-        "attributedTo" => Aptok.json(ctx.get_actor_uri(identifier)),
-        "content"      => Aptok.json("Hello from Aptok"),
-        "to"           => Aptok.json([Aptok::PUBLIC_COLLECTION]),
-      }
-    )
+  outbox(
+    "/users/{identifier}/outbox",
+    Aptok::CollectionDispatcher.new do |ctx, identifier|
+      note = Aptok.object(
+        "Note",
+        "#{ctx.get_outbox_uri(identifier)}/hello",
+        Aptok::JsonMap{
+          "attributedTo" => Aptok.json(ctx.get_actor_uri(identifier)),
+          "content"      => Aptok.json("Hello from Aptok"),
+          "to"           => Aptok.json([Aptok::PUBLIC_COLLECTION]),
+        }
+      )
 
-    [Aptok.create(
-      "#{ctx.get_outbox_uri(identifier)}/hello/activity",
-      ctx.get_actor_uri(identifier),
-      note
-    )]
-  end
+      [Aptok.create(
+        "#{ctx.get_outbox_uri(identifier)}/hello/activity",
+        ctx.get_actor_uri(identifier),
+        note
+      )]
+    end
+  )
 
   inbox "/users/{identifier}/inbox", "/inbox" do |routes|
     routes.on "Create" do |ctx, activity|
@@ -52,13 +54,18 @@ NOT_ACCEPTABLE = Aptok::Response.new(
   "Not Acceptable"
 )
 
+FETCH_OPTIONS = Aptok::FetchOptions.new(
+  on_not_found: Aptok::RequestHandler.new do |_request|
+    NOT_FOUND
+  end,
+  on_not_acceptable: Aptok::RequestHandler.new do |_request|
+    NOT_ACCEPTABLE
+  end
+)
+
 server = HTTP::Server.new do |context|
   request = Aptok.request_from_http(context.request)
-  response = federation.fetch(
-    request,
-    on_not_found: ->(_request : Aptok::Request) { NOT_FOUND },
-    on_not_acceptable: ->(_request : Aptok::Request) { NOT_ACCEPTABLE }
-  )
+  response = federation.fetch(request, FETCH_OPTIONS)
   Aptok.write_http_response(response, context.response)
 end
 

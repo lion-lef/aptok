@@ -50,8 +50,7 @@ require "aptok"
 ## Federation
 
 `Aptok.federation` creates a federation and configures it with a Crystal-style
-DSL. The block uses the federation as its implicit receiver, while still
-accepting an explicit block argument when preferred:
+DSL:
 
 ```crystal
 federation = Aptok.federation("https://example.com") do
@@ -81,9 +80,7 @@ actor = ctx.actor("alice")
 
 `Federation#handle` provides a small framework-neutral adapter target. Web
 frameworks can translate their native requests into `Aptok::Request` and return
-`Aptok::Response`. For Crystal's standard HTTP server, use
-`Aptok.request_from_http` and `Aptok.write_http_response` around
-`Federation#fetch`, matching Fedify's custom middleware integration pattern.
+`Aptok::Response`.
 
 ```crystal
 response = federation.handle(Aptok::Request.new(
@@ -97,21 +94,10 @@ response.headers
 response.body
 ```
 
-```crystal
-server = HTTP::Server.new do |context|
-  request = Aptok.request_from_http(context.request)
-  response = federation.fetch(
-    request,
-    on_not_found: ->(_request : Aptok::Request) {
-      Aptok::Response.new(404, {"Content-Type" => "text/plain"}, "web route not found")
-    },
-    on_not_acceptable: ->(_request : Aptok::Request) {
-      Aptok::Response.new(406, {"Content-Type" => Aptok::FEDIFY_TEXT_CONTENT_TYPE}, "Not Acceptable")
-    }
-  )
-  Aptok.write_http_response(response, context.response)
-end
-```
+For Crystal's standard HTTP server, use `Aptok.request_from_http` and
+`Aptok.write_http_response` around `Federation#fetch`, matching Fedify's custom
+middleware integration pattern. See [`examples/server.cr`](examples/server.cr)
+for a runnable server.
 
 `Federation#fetch` is an alias for `handle` with Fedify-style request fallback
 callbacks. Use these callbacks from framework middleware when normal web routes

@@ -12,4 +12,22 @@ describe "project naming" do
     shard["name"].as_s.should eq("aptok")
     shard["targets"]["aptok"]["main"].as_s.should eq("src/aptok.cr")
   end
+
+  it "keeps documentation on the aptok project name" do
+    readme = File.read("#{__DIR__}/../README.md")
+    readme.should contain("# Aptok")
+    readme.should contain("require \"aptok\"")
+    readme.should_not contain("aptork")
+    readme.should_not contain("Aptork")
+  end
+
+  it "keeps the example server type-checking" do
+    status = Process.run(
+      "crystal",
+      ["build", "examples/server.cr", "--no-codegen"],
+      output: Process::Redirect::Close,
+      error: Process::Redirect::Inherit
+    )
+    status.success?.should be_true
+  end
 end

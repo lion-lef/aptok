@@ -19,16 +19,18 @@ framework surface for building federated apps:
 - signed-fetch access control for actor/object/collection GET routes,
 - remote document loading, object lookup, and collection traversal,
 - authenticated document loaders for signed fetch,
-- in-memory KV and queue primitives,
+- in-memory, Redis, and SQL (SQLite/PostgreSQL) KV and queue primitives,
+- OpenMetrics/Prometheus metrics telemetry exporter,
 - WebFinger handle mapping, alias mapping, link customization, and NodeInfo document builders,
 - NodeInfo client lookup with typed parsing helpers,
 - testing capture helpers,
 - injectable HTTP/signature hooks for tests,
 - ForgeFed repository, project, branch, commit, tag, push, ticket, tracker, and
   merge request helpers,
-- marketplace offer/service/listing and FEP-0837 proposal/agreement helpers.
+- marketplace offer/service/listing and FEP-0837 proposal/agreement helpers,
+- a [`FEDERATION.md`](FEDERATION.md) (FEP-67ff) describing the implementation.
 
-It is not a full Fedify port yet. The current implementation focuses on the
+It is distributed under the [0BSD license](LICENSE). It is not a full Fedify port yet. The current implementation focuses on the
 core shape and outbound/server-side building blocks.
 
 ## Installation
@@ -2217,6 +2219,36 @@ The no-op default has no runtime dependency. Built-in instrumentation currently
 records HTTP request spans and request counters/durations, inbox and outbox
 routing spans/counters, and outbound delivery spans/counters.
 
+For feature parity with Fedify's OpenTelemetry metrics without taking on an
+external dependency, Aptork ships `Aptork::MetricsTelemetry`. It aggregates
+counters, gauges, histograms, and `span` timings in memory (thread-safe behind a
+`Mutex`) and renders them in the OpenMetrics / Prometheus text exposition format,
+ready to serve from a `/metrics` endpoint that a Prometheus-compatible scraper
+(or any OpenTelemetry collector with a Prometheus receiver) can read:
+
+```crystal
+metrics = Aptork::MetricsTelemetry.new
+
+federation = Aptork::Federation.create(
+  "https://example.com",
+  telemetry: metrics
+)
+
+# span/counter/histogram/gauge are recorded automatically by the framework, or
+# manually from application code:
+metrics.counter("app.activities.created", attributes: Aptork::TelemetryAttributes{"type" => "Note"})
+metrics.gauge("app.queue.depth", 12.0)
+metrics.span("app.deliver") { deliver_activity }
+
+# Serve from an HTTP handler.
+exposition = metrics.to_openmetrics            # alias: to_prometheus
+```
+
+`span` records a `<name>_duration_seconds` histogram (plus a call counter) using
+a monotonic clock, so request, routing, and delivery latencies are exported with
+default buckets. Introspection helpers (`counter_value`, `gauge_value`,
+`histogram_data`) and `reset` make `MetricsTelemetry` convenient in tests too.
+
 ## Stores, Queues, and Discovery
 
 Fedify exposes pluggable stores and queues. Aptork includes small in-memory
@@ -2270,6 +2302,55 @@ and `listen` helpers as the in-process queue.
 `#process_queued_fanout_activities` consume any configured queue that implements
 `MessageQueue#listen`, so Redis-backed workers can use the same processing
 helpers as tests that use `InProcessMessageQueue`.
+
+### SQL stores (SQLite & PostgreSQL)
+
+For durable, transactional persistence without an external broker, Aptork
+provides SQL-backed implementations of both the `KvStore` and `MessageQueue`
+interfaces. `SqlKvStore` and `SqlMessageQueue` work over any object that includes
+the `Aptork::SqlConnection` module; the bundled connections target SQLite and
+PostgreSQL, and the `SqlDialect` enum selects the right placeholder/upsert
+syntax. Both stores `migrate` their tables on construction by default.
+
+PostgreSQL is supported by `Aptork::PostgresConnection`, a **pure-Crystal** v3
+wire-protocol client (no `libpq` or external shard). It speaks the trust,
+cleartext, MD5, and SCRAM-SHA-256 auth methods and uses the extended query
+protocol, so it builds as part of the default toolkit:
+
+```crystal
+conn = Aptork::PostgresConnection.connect("postgres://user:pass@localhost:5432/aptork")
+
+store = Aptork::SqlKvStore.new(conn, dialect: Aptork::SqlDialect::Postgres)
+queue = Aptork::SqlMessageQueue.new(conn, dialect: Aptork::SqlDialect::Postgres)
+
+federation = Aptork::Federation.create(
+  "https://example.com",
+  kv: store,
+  inbox_queue: queue,
+  outbox_queue: queue
+)
+```
+
+SQLite is supported by `Aptork::SqliteConnection`, a thin FFI binding over the
+system `libsqlite3`. Because it links a native library, it is **opt-in**: it is
+not pulled in by `require "aptork"`, so add it explicitly when you need it:
+
+```crystal
+require "aptork"
+require "aptork/store/sqlite"
+
+conn = Aptork::SqliteConnection.open("aptork.db") # or ":memory:"
+
+store = Aptork::SqlKvStore.new(conn, dialect: Aptork::SqlDialect::Sqlite)
+queue = Aptork::SqlMessageQueue.new(conn, dialect: Aptork::SqlDialect::Sqlite)
+```
+
+`SqlKvStore` supports `get`/`set` with TTL expiry, `delete`, prefix `list`, and
+atomic `cas`. `SqlMessageQueue` supports `enqueue`/`enqueue_many` with delay and
+ordering keys, `depth`/`get_depth`, FIFO `process_one` with retry/backoff and a
+dead-letter table, and `listen`, matching the in-process and Redis queues. You
+can also point the SQL stores at any other engine by implementing
+`Aptork::SqlConnection#execute` and `#query` over your own driver.
 
 For Fedify-style queue observability, `MessageQueue#get_depth` returns
 structured ready/delayed counts when the backend supports it. Custom backends can
@@ -2723,7 +2804,8 @@ Implemented now:
 - Ed25519/Multikey `eddsa-jcs-2022` Object Integrity Proof helpers,
 - remote Multikey fetching/caching for proof verification,
 - RSA-backed `DataIntegrityProof` helpers for local canonical JSON proofs,
-- in-memory and Redis KV/queue helpers,
+- in-memory, Redis, and SQL (SQLite/PostgreSQL) KV/queue helpers,
+- OpenMetrics/Prometheus metrics telemetry exporter,
 - WebFinger and NodeInfo builders,
 - NodeInfo client lookup with Fedify-style JRD link ordering, URI inputs, origin-root discovery, direct, raw, and typed modes,
 - custom WebFinger and NodeInfo dispatchers,
@@ -2763,3 +2845,18 @@ The app provider uses `Aptork::Transport`, `Aptork::PublishRequest`, and
 `Aptork::DeliveryConfig` as a compatibility layer for the gateway provider.
 New code should prefer `Federation` and `Context#send_activity` for Fedify-style
 apps.
+
+## Federation Metadata (FEP-67ff)
+
+Following [FEP-67ff][fep-67ff], the repository ships a
+[`FEDERATION.md`](FEDERATION.md) document describing which ActivityPub, ForgeFed,
+and FEP behaviors Aptork implements, the supported endpoints, and the
+authentication mechanisms. Downstream applications embedding Aptork are
+encouraged to provide their own `FEDERATION.md` describing their deployment.
+
+[fep-67ff]: https://codeberg.org/fediverse/fep/src/branch/main/fep/67ff/fep-67ff.md
+
+## License
+
+Aptork is distributed under the [BSD Zero Clause License](LICENSE) (0BSD), a
+public-domain-equivalent license with no attribution requirement.

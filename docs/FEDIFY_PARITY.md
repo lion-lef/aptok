@@ -67,11 +67,11 @@ The columns mean:
 
 | Fedify capability | Aptork | Where / notes |
 | --- | --- | --- |
-| Key-value store | ✅ | `MemoryKvStore`, `RedisKvStore` |
-| Message queue + retry | ✅ | `InProcessMessageQueue`, `RedisMessageQueue`, `QueueWorker` |
+| Key-value store | ✅ | `MemoryKvStore`, `RedisKvStore`, `SqlKvStore` |
+| Message queue + retry | ✅ | `InProcessMessageQueue`, `RedisMessageQueue`, `SqlMessageQueue`, `QueueWorker` |
 | AMQP / RabbitMQ driver | ❌ | Redis is the only external broker. |
-| SQL stores (Postgres/MySQL/SQLite) | ❌ | Not provided; bring your own via the `KvStore` interface. |
-| Telemetry / metrics hooks | 🟡 | `src/telemetry.cr` collects counters; no OpenTelemetry exporter. |
+| SQL stores (Postgres/SQLite) | ✅ | `SqlKvStore` + `SqlMessageQueue` over a `SqlConnection`; pure-Crystal `PostgresConnection` and opt-in `SqliteConnection` (FFI). MySQL not yet provided. |
+| Telemetry / metrics hooks | ✅ | `MetricsTelemetry` aggregates counters/gauges/histograms/span timings and renders OpenMetrics / Prometheus text (`to_openmetrics`). |
 
 ## Developer tooling & integration
 
@@ -86,25 +86,52 @@ The columns mean:
 
 ## ForgeFed coverage
 
+This section maps Aptork against the [ForgeFed vocabulary spec][forgefed-vocab].
 Builders live in `src/vocabulary/vocabulary_forgefed*`; round-trip
 `from_json_ld` parsers exist for the trackers/tickets/pushes.
 
-| ForgeFed type | Aptork builder |
-| --- | --- |
-| Repository | ✅ `Aptork.forgefed_repository` |
-| Project | ✅ `Aptork.forgefed_project` |
-| Branch | ✅ `Aptork.forgefed_branch` |
-| Commit | ✅ `Aptork.forgefed_commit` |
-| Tag | ✅ `Aptork.forgefed_tag` |
-| Push | ✅ `Aptork.forgefed_push` |
-| Ticket | ✅ `Aptork.forgefed_ticket` |
-| TicketTracker | ✅ `Aptork.forgefed_ticket_tracker` |
-| PatchTracker | ✅ `Aptork.forgefed_patch_tracker` |
-| MergeRequest | ✅ `Aptork.forgefed_merge_request` |
+[forgefed-vocab]: https://forgefed.org/vocabulary.html
 
-**Gaps:** there is no dedicated `Patch`/`Diff` object helper, and the ForgeFed
-`@context` is attached but not all optional collections (e.g. `team`,
-`dependants`) have typed accessors.
+### Object & Actor types
+
+| ForgeFed type | Aptork | Notes |
+| --- | --- | --- |
+| Repository | ✅ `Aptork.forgefed_repository` | Actor type with `team`/`forks` collections. |
+| Project | ✅ `Aptork.forgefed_project` | |
+| Branch | ✅ `Aptork.forgefed_branch` | `ref` + `Repository` linkage. |
+| Commit | ✅ `Aptork.forgefed_commit` | `committedBy`, `hash`, `committed`, `created`. |
+| Tag | ✅ `Aptork.forgefed_tag` | |
+| Push | ✅ `Aptork.forgefed_push` | Activity carrying `Commit`s onto a `Branch`. |
+| Ticket | ✅ `Aptork.forgefed_ticket` | `isResolved` round-trips. |
+| TicketTracker | ✅ `Aptork.forgefed_ticket_tracker` | |
+| PatchTracker | ✅ `Aptork.forgefed_patch_tracker` | |
+| TicketDependency | 🟡 | `dependsOn`/`dependants` carried as plain links, no typed object. |
+| Patch / Diff | ❌ | No dedicated helper; model patches via generic objects. |
+
+### Activity / interaction types
+
+| ForgeFed pattern | Aptork | Notes |
+| --- | --- | --- |
+| Offer a ticket/patch (`Offer`) | ✅ `Aptork.forgefed_merge_request` | Builds an `Offer` with the patch as `object` and tracker as `target`. |
+| Push (`Push` activity) | ✅ `Aptork.forgefed_push` | |
+| Resolve / reopen ticket | 🟡 | Use generic `Aptork.activity("Resolve", …)`; no ForgeFed-typed wrapper. |
+| Apply a patch (`Apply`) | 🟡 | Same — generic activity, no dedicated builder. |
+| Grant / Revoke access | ❌ | Permission delegation not modelled. |
+
+### Properties & context
+
+| Capability | Aptork | Notes |
+| --- | --- | --- |
+| ForgeFed `@context` injection | ✅ | Attached by every `forgefed_*` builder. |
+| `committedBy` / `hash` / `committed` | ✅ | On `forgefed_commit`. |
+| `isResolved` | ✅ | On `forgefed_ticket`. |
+| `dependsOn` / `dependants` typed accessors | ❌ | Present in JSON only. |
+| `filesAdded` / `filesModified` / `filesRemoved` | ❌ | Commit file lists not exposed. |
+
+**Gaps:** there is no dedicated `Patch`/`Diff` object helper, the `Resolve`/
+`Apply`/`Grant`/`Revoke` activities are only reachable through the generic
+`Aptork.activity` builder, and not all optional collections (e.g. `team`,
+`dependants`) or commit file-lists have typed accessors.
 
 ## Marketplace / FEP-0837 coverage
 
@@ -129,7 +156,10 @@ terms are mapped in `Aptork.marketplace_context`.
 
 1. Linked Data Signatures (RsaSignature2017) for older fediverse software.
 2. An `aptork` CLI for fetching/inspecting objects and verifying signatures.
-3. Additional queue/store drivers (AMQP, SQL) behind the existing interfaces.
+3. An AMQP/RabbitMQ queue driver and a MySQL `SqlConnection` behind the existing
+   interfaces (SQLite and PostgreSQL `SqlConnection`s already ship).
 4. A full RFC 6570 URI Template implementation (the current `RouteTemplate` is a
    pragmatic subset — simple `{var}` and trailing `{+var}` operators).
 5. Optional strict-mode validators for ForgeFed and FEP-0837 documents.
+6. ForgeFed-typed `Resolve`/`Apply`/`Grant`/`Revoke` activity builders and typed
+   accessors for `dependsOn`/`dependants` and commit file-lists.

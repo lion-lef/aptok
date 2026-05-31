@@ -22,6 +22,12 @@ describe "project naming" do
   end
 
   it "keeps the example server type-checking" do
+    example = File.read("#{__DIR__}/../examples/server.cr")
+    example.should_not contain("Aptork")
+    example.should_not contain("aptork")
+    example.should_not contain("set_inbox_listeners")
+    example.should_not contain("set_outbox_dispatcher")
+
     status = Process.run(
       "crystal",
       ["build", "examples/server.cr", "--no-codegen"],

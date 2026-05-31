@@ -18,7 +18,8 @@ federation = Aptok.federation(origin) do
     ).as(Aptok::JsonMap?)
   end
 
-  set_outbox_dispatcher "/users/{identifier}/outbox", ->(ctx : Aptok::Context, identifier : String) do
+  collection "outbox", "/users/{identifier}/outbox" do |ctx, params|
+    identifier = params["identifier"]
     note = Aptok.object(
       "Note",
       "#{ctx.get_outbox_uri(identifier)}/hello",
@@ -44,20 +45,19 @@ federation = Aptok.federation(origin) do
   end
 end
 
+NOT_FOUND      = Aptok::Response.new(404, {"Content-Type" => "text/plain"}, "Not found")
+NOT_ACCEPTABLE = Aptok::Response.new(
+  406,
+  {"Content-Type" => Aptok::FEDIFY_TEXT_CONTENT_TYPE, "Vary" => "Accept, Signature"},
+  "Not Acceptable"
+)
+
 server = HTTP::Server.new do |context|
   request = Aptok.request_from_http(context.request)
   response = federation.fetch(
     request,
-    on_not_found: ->(_request : Aptok::Request) {
-      Aptok::Response.new(404, {"Content-Type" => "text/plain"}, "Not found")
-    },
-    on_not_acceptable: ->(_request : Aptok::Request) {
-      Aptok::Response.new(
-        406,
-        {"Content-Type" => Aptok::FEDIFY_TEXT_CONTENT_TYPE, "Vary" => "Accept, Signature"},
-        "Not Acceptable"
-      )
-    }
+    on_not_found: ->(_request : Aptok::Request) { NOT_FOUND },
+    on_not_acceptable: ->(_request : Aptok::Request) { NOT_ACCEPTABLE }
   )
   Aptok.write_http_response(response, context.response)
 end

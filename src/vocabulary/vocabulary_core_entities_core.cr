@@ -14,7 +14,10 @@ module Aptork
       end
 
       def self.from_json_ld(value : JsonMap) : Object
-        type = string_property(value, "type").try { |value| Aptork.type_name(value) }
+        types = type_names(value)
+        return TicketDependency.from_json_ld(value) if types.includes?("TicketDependency")
+
+        type = types.first?
         case type
         when "Create"
           Create.from_json_ld(value)
@@ -72,6 +75,14 @@ module Aptork
           Update.from_json_ld(value)
         when "View"
           View.from_json_ld(value)
+        when "Resolve"
+          Resolve.from_json_ld(value)
+        when "Apply"
+          Apply.from_json_ld(value)
+        when "Grant"
+          Grant.from_json_ld(value)
+        when "Revoke"
+          Revoke.from_json_ld(value)
         when "Article"
           Article.from_json_ld(value)
         when "Audio"
@@ -128,10 +139,14 @@ module Aptork
               MarketplaceObject.from_json_ld(value)
             elsif FORGEFED_TYPES.includes?(type) && forgefed_context?(value)
               ForgeFedObject.from_json_ld(value)
+            elsif FORGEFED_ACTIVITY_TYPES.includes?(type) && forgefed_context?(value)
+              Activity.from_json_ld(value)
             elsif ACTIVITY_TYPES.includes?(type)
               Activity.from_json_ld(value)
             elsif FORGEFED_TYPES.includes?(type)
               ForgeFedObject.from_json_ld(value)
+            elsif FORGEFED_ACTIVITY_TYPES.includes?(type)
+              Activity.from_json_ld(value)
             elsif MARKETPLACE_TYPES.includes?(type)
               MarketplaceObject.from_json_ld(value)
             else
@@ -173,6 +188,17 @@ module Aptork
       protected def self.string_property(value : JsonMap, key : String) : String?
         property = value[key]?
         property.try(&.as_s?) || property.try(&.as_a?).try(&.first?.try(&.as_s?))
+      end
+
+      protected def self.type_names(value : JsonMap) : Array(String)
+        property = value["type"]?
+        return [] of String unless property
+
+        if string = property.as_s?
+          [Aptork.type_name(string)]
+        else
+          property.as_a?.try(&.compact_map { |item| item.as_s?.try { |type| Aptork.type_name(type) } }) || [] of String
+        end
       end
 
       protected def self.string_array_property(value : JsonMap, key : String) : Array(String)
@@ -336,6 +362,14 @@ module Aptork
           Update.from_json_ld(value)
         when "View"
           View.from_json_ld(value)
+        when "Resolve"
+          Resolve.from_json_ld(value)
+        when "Apply"
+          Apply.from_json_ld(value)
+        when "Grant"
+          Grant.from_json_ld(value)
+        when "Revoke"
+          Revoke.from_json_ld(value)
         else
           new(value)
         end

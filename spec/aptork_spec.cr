@@ -9083,20 +9083,53 @@ describe "Aptork vocabulary helpers" do
     typed_push.published.should_not be_nil
   end
 
+  it "exposes ForgeFed commit file-list accessors" do
+    commit = Aptork.forgefed_commit(
+      "https://local.example/repos/aptork/commits/abc",
+      "https://local.example/repos/aptork",
+      "abc",
+      "https://local.example/users/alice",
+      "Add federation",
+      files_added: ["src/federation.cr"],
+      files_modified: ["README.md"],
+      files_removed: ["old/federation.cr"]
+    )
+
+    commit["filesAdded"].as_a.first.as_s.should eq("src/federation.cr")
+    commit["filesModified"].as_a.first.as_s.should eq("README.md")
+    commit["filesRemoved"].as_a.first.as_s.should eq("old/federation.cr")
+
+    parsed = Aptork::Vocab::Object.from_json_ld(commit)
+    parsed.should be_a(Aptork::Vocab::Commit)
+    typed_commit = parsed.as(Aptork::Vocab::Commit)
+    typed_commit.files_added.should eq(["src/federation.cr"])
+    typed_commit.files_modified.should eq(["README.md"])
+    typed_commit.files_removed.should eq(["old/federation.cr"])
+  end
+
   it "builds ForgeFed Ticket objects" do
+    dependency = Aptork.forgefed_ticket(
+      "https://local.example/tickets/0",
+      "Dependency",
+      "Unblock the main ticket"
+    )
     ticket = Aptork.forgefed_ticket(
       "https://local.example/tickets/1",
       "Bug",
       "Fix it",
       assignee: "https://remote.example/users/bob",
       context: "https://local.example/repos/aptork",
-      resolved: false
+      resolved: false,
+      depends_on: [dependency],
+      dependants: ["https://local.example/tickets/2"]
     )
 
     ticket["type"].as_s.should eq("Ticket")
     ticket["assignee"].as_s.should eq("https://remote.example/users/bob")
     ticket["context"].as_s.should eq("https://local.example/repos/aptork")
     ticket["resolved"].as_bool.should be_false
+    ticket["dependsOn"].as_a.first.as_h["id"].as_s.should eq("https://local.example/tickets/0")
+    ticket["dependants"].as_a.first.as_s.should eq("https://local.example/tickets/2")
 
     parsed = Aptork::Vocab::Object.from_json_ld(ticket)
     parsed.should be_a(Aptork::Vocab::Ticket)
@@ -9106,6 +9139,96 @@ describe "Aptork vocabulary helpers" do
     parsed_ticket.assignee.should eq("https://remote.example/users/bob")
     parsed_ticket.context.should eq("https://local.example/repos/aptork")
     parsed_ticket.resolved.should be_false
+    parsed_ticket.depends_on.first.should be_a(Aptork::Vocab::Ticket)
+    parsed_ticket.depends_on.first.as(Aptork::Vocab::Ticket).id.should eq("https://local.example/tickets/0")
+    parsed_ticket.dependants.should eq(["https://local.example/tickets/2"])
+  end
+
+  it "builds ForgeFed TicketDependency relationship objects" do
+    dependency = Aptork.forgefed_ticket_dependency(
+      "https://local.example/ticket-deps/1",
+      "https://local.example/tickets/1",
+      "https://remote.example/tickets/2",
+      attributed_to: "https://local.example/users/alice",
+      summary: "Bug depends on upstream fix",
+      published: "2026-05-31T00:00:00Z"
+    )
+
+    dependency["@context"].as_a.includes?(Aptork.json(Aptork::FORGEFED_CONTEXT)).should be_true
+    dependency["type"].as_a.map(&.as_s).should eq(["Relationship", "TicketDependency"])
+    dependency["subject"].as_s.should eq("https://local.example/tickets/1")
+    dependency["relationship"].as_s.should eq("dependsOn")
+    dependency["object"].as_s.should eq("https://remote.example/tickets/2")
+
+    parsed = Aptork::Vocab::Object.from_json_ld(dependency)
+    parsed.should be_a(Aptork::Vocab::TicketDependency)
+    typed_dependency = parsed.as(Aptork::Vocab::TicketDependency)
+    typed_dependency.id.should eq("https://local.example/ticket-deps/1")
+    typed_dependency.type.should eq("TicketDependency")
+    typed_dependency.subject.should eq("https://local.example/tickets/1")
+    typed_dependency.relationship.should eq("dependsOn")
+    typed_dependency.object.should eq("https://remote.example/tickets/2")
+    Aptork::Vocab::Relationship.from_json_ld(dependency).should be_a(Aptork::Vocab::TicketDependency)
+    Aptork::Vocab::TicketDependency.type_id.should eq("#{Aptork::FORGEFED_CONTEXT}#TicketDependency")
+    Aptork.type_lineage("TicketDependency").should contain("Relationship")
+    Aptork.valid_forgefed?(dependency).should be_true
+
+    invalid_dependency = dependency.dup
+    invalid_dependency["relationship"] = Aptork.json("blocks")
+    Aptork.valid_forgefed?(invalid_dependency).should be_false
+    Aptork.forgefed_validation_errors(invalid_dependency).should contain("relationship must be dependsOn")
+  end
+
+  it "builds ForgeFed typed ticket, patch, and access activities" do
+    ticket = Aptork.forgefed_ticket(
+      "https://local.example/tickets/1",
+      "Bug",
+      "Fix it"
+    )
+    resolve = Aptork.forgefed_resolve(
+      "https://local.example/activities/resolve-1",
+      "https://local.example/users/alice",
+      ticket,
+      target: "https://local.example/repos/aptork"
+    )
+    apply = Aptork.forgefed_apply(
+      "https://local.example/activities/apply-1",
+      "https://local.example/users/alice",
+      "https://local.example/patches/1",
+      target: "https://local.example/repos/aptork/branches/main"
+    )
+    grant = Aptork.forgefed_grant(
+      "https://local.example/activities/grant-1",
+      "https://local.example/users/alice",
+      "https://remote.example/users/bob",
+      target: "https://local.example/repos/aptork"
+    )
+    revoke = Aptork.forgefed_revoke(
+      "https://local.example/activities/revoke-1",
+      "https://local.example/users/alice",
+      "https://remote.example/users/bob",
+      target: "https://local.example/repos/aptork"
+    )
+
+    [resolve, apply, grant, revoke].each do |activity|
+      activity["@context"].as_a.includes?(Aptork.json(Aptork::FORGEFED_CONTEXT)).should be_true
+      activity["published"].as_s?.should_not be_nil
+    end
+    resolve["type"].as_s.should eq("Resolve")
+    apply["type"].as_s.should eq("Apply")
+    grant["type"].as_s.should eq("Grant")
+    revoke["type"].as_s.should eq("Revoke")
+
+    parsed_resolve = Aptork::Vocab::Object.from_json_ld(resolve)
+    parsed_resolve.should be_a(Aptork::Vocab::Resolve)
+    parsed_resolve.as(Aptork::Vocab::Resolve).object.should be_a(Aptork::Vocab::Ticket)
+    parsed_apply = Aptork::Vocab::Activity.from_json_ld(apply)
+    parsed_apply.should be_a(Aptork::Vocab::Apply)
+    parsed_apply.as(Aptork::Vocab::Apply).target.should eq("https://local.example/repos/aptork/branches/main")
+    Aptork::Vocab::Grant.from_json_ld(grant).target.should eq("https://local.example/repos/aptork")
+    Aptork::Vocab::Revoke.from_json_ld(revoke).object.should eq("https://remote.example/users/bob")
+    Aptork::Vocab::Resolve.type_id.should eq("#{Aptork::FORGEFED_CONTEXT}#Resolve")
+    Aptork.type_lineage("Resolve").should contain("Activity")
   end
 
   it "builds ForgeFed MergeRequest-like Ticket objects" do
@@ -9291,6 +9414,65 @@ describe "Aptork vocabulary helpers" do
     parsed_offer = Aptork::Vocab::Object.from_json_ld(offer)
     parsed_offer.should be_a(Aptork::Vocab::MarketplaceOffer)
     parsed_offer.as(Aptork::Vocab::MarketplaceOffer).object.should be_a(Aptork::Vocab::Agreement)
+  end
+
+  it "strictly validates ForgeFed and FEP-0837 documents on demand" do
+    commit = Aptork.forgefed_commit(
+      "https://local.example/repos/aptork/commits/abc",
+      "https://local.example/repos/aptork",
+      "abc",
+      "https://local.example/users/alice",
+      "Add federation",
+      files_added: ["src/federation.cr"]
+    )
+    Aptork.valid_forgefed?(commit).should be_true
+    Aptork.validate_forgefed!(commit).should eq(commit)
+
+    invalid_commit = commit.dup
+    invalid_commit.delete("hash")
+    Aptork.valid_forgefed?(invalid_commit).should be_false
+    Aptork.forgefed_validation_errors(invalid_commit).should contain("hash is required")
+    expect_raises(ArgumentError, /invalid ForgeFed document/) do
+      Aptork.validate_forgefed!(invalid_commit)
+    end
+
+    invalid_file_list = commit.dup
+    invalid_file_list["filesAdded"] = Aptork.json(["src/federation.cr", 1])
+    Aptork.valid_forgefed?(invalid_file_list).should be_false
+
+    quantity = Aptork.marketplace_quantity(value: "1")
+    intent = Aptork.marketplace_intent(
+      "https://market.example/proposals/1#primary",
+      "transfer",
+      quantity
+    )
+    proposal = Aptork.marketplace_proposal(
+      "https://market.example/proposals/1",
+      "offer",
+      "https://market.example/users/alice",
+      intent
+    )
+    listing = Aptork.marketplace_listing(
+      "https://market.example/listings/1",
+      "https://market.example/users/alice",
+      Aptork.marketplace_product("https://market.example/products/1", "Bike"),
+      "Bike"
+    )
+    Aptork.valid_fep_0837?(proposal).should be_true
+    Aptork.valid_fep_0837?(listing).should be_true
+    Aptork.validate_fep_0837!(proposal).should eq(proposal)
+
+    invalid_proposal = proposal.dup
+    invalid_proposal.delete("publishes")
+    Aptork.valid_fep_0837?(invalid_proposal).should be_false
+    Aptork.fep_0837_validation_errors(invalid_proposal).should contain("publishes is required")
+    expect_raises(ArgumentError, /invalid FEP-0837 document/) do
+      Aptork.validate_fep_0837!(invalid_proposal)
+    end
+
+    invalid_listing = listing.dup
+    invalid_listing["to"] = Aptork.json([] of String)
+    Aptork.valid_fep_0837?(invalid_listing).should be_false
   end
 end
 

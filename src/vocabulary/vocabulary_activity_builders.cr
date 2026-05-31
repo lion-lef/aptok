@@ -96,7 +96,10 @@ module Aptork
     created : String = now,
     description : String? = nil,
     committed_by : String? = nil,
-    committed : String? = nil
+    committed : String? = nil,
+    files_added : Array(String) = [] of String,
+    files_modified : Array(String) = [] of String,
+    files_removed : Array(String) = [] of String
   ) : JsonMap
     properties = JsonMap{
       "context"      => json(repository),
@@ -107,6 +110,9 @@ module Aptork
     }
     properties["committedBy"] = json(committed_by) if committed_by
     properties["committed"] = json(committed) if committed
+    properties["filesAdded"] = json(files_added) unless files_added.empty?
+    properties["filesModified"] = json(files_modified) unless files_modified.empty?
+    properties["filesRemoved"] = json(files_removed) unless files_removed.empty?
     if description
       properties["description"] = json({
         "mediaType" => "text/plain",
@@ -149,7 +155,9 @@ module Aptork
     attributed_to : String? = nil,
     context : String? = nil,
     resolved : Bool? = nil,
-    attachment : Array(JsonMap) = [] of JsonMap
+    attachment : Array(JsonMap) = [] of JsonMap,
+    depends_on : Array(JsonMap | String) = [] of JsonMap | String,
+    dependants : Array(JsonMap | String) = [] of JsonMap | String
   ) : JsonMap
     properties = JsonMap{
       "@context" => json([ACTIVITYSTREAMS_CONTEXT, FORGEFED_CONTEXT]),
@@ -161,8 +169,67 @@ module Aptork
     properties["context"] = json(context) if context && !context.empty?
     properties["resolved"] = json(resolved) unless resolved.nil?
     properties["attachment"] = json(attachment) unless attachment.empty?
+    properties["dependsOn"] = json(depends_on) unless depends_on.empty?
+    properties["dependants"] = json(dependants) unless dependants.empty?
     Aptork.object("Ticket", id, properties)
   end
+
+  def self.forgefed_ticket_dependency(
+    id : String,
+    subject : JsonMap | String,
+    object : JsonMap | String,
+    attributed_to : String? = nil,
+    summary : String? = nil,
+    published : String? = nil
+  ) : JsonMap
+    properties = JsonMap{
+      "@context"     => json([ACTIVITYSTREAMS_CONTEXT, FORGEFED_CONTEXT]),
+      "type"         => json(["Relationship", "TicketDependency"]),
+      "subject"      => json(subject),
+      "relationship" => json("dependsOn"),
+      "object"       => json(object),
+      "published"    => json(published || now),
+    }
+    properties["attributedTo"] = json(attributed_to) if attributed_to && !attributed_to.empty?
+    properties["summary"] = json(summary) if summary && !summary.empty?
+    Aptork.object("Relationship", id, properties)
+  end
+
+  def self.forgefed_activity(
+    type : String,
+    id : String,
+    actor : String,
+    object : JsonMap | String,
+    to : Array(String) = [PUBLIC_COLLECTION],
+    target : JsonMap | String | Nil = nil
+  ) : JsonMap
+    properties = JsonMap{
+      "@context"  => json([ACTIVITYSTREAMS_CONTEXT, FORGEFED_CONTEXT]),
+      "actor"     => json(actor),
+      "object"    => json(object),
+      "to"        => json(to),
+      "published" => json(now),
+    }
+    properties["target"] = json(target) if target
+    Aptork.object(type, id, properties)
+  end
+
+  macro forgefed_activity_builder(method_name, type_name)
+    def self.{{method_name.id}}(
+      id : String,
+      actor : String,
+      object : JsonMap | String,
+      to : Array(String) = [PUBLIC_COLLECTION],
+      target : JsonMap | String | Nil = nil
+    ) : JsonMap
+      forgefed_activity({{type_name}}, id, actor, object, to, target)
+    end
+  end
+
+  forgefed_activity_builder forgefed_resolve, "Resolve"
+  forgefed_activity_builder forgefed_apply, "Apply"
+  forgefed_activity_builder forgefed_grant, "Grant"
+  forgefed_activity_builder forgefed_revoke, "Revoke"
 
   def self.forgefed_merge_request(
     id : String,

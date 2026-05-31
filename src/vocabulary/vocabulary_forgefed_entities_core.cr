@@ -48,6 +48,28 @@ module Aptork
       end
     end
 
+    class TicketDependency < Relationship
+      getter subject : Object | String | Nil
+      getter relationship : String?
+      getter object : Object | String | Nil
+
+      def self.from_json_ld(value : JSON::Any) : TicketDependency
+        from_json_ld(json_object(value))
+      end
+
+      def self.from_json_ld(value : JsonMap) : TicketDependency
+        new(value)
+      end
+
+      def initialize(json : JsonMap)
+        super(json)
+        @type = "TicketDependency"
+        @subject = self.class.object_property(json, "subject")
+        @relationship = self.class.string_property(json, "relationship")
+        @object = self.class.object_property(json, "object")
+      end
+    end
+
     class Push < ForgeFedObject
       getter actor : String?
       getter attributed_to : String?
@@ -95,6 +117,8 @@ module Aptork
       getter attributed_to : String?
       getter resolved : Bool?
       getter attachments : Array(Object | String)
+      getter depends_on : Array(Object | String)
+      getter dependants : Array(Object | String)
       getter mr_diff : String?
 
       def self.from_json_ld(value : JSON::Any) : Ticket
@@ -112,6 +136,8 @@ module Aptork
         @attributed_to = self.class.string_property(json, "attributedTo")
         @resolved = self.class.bool_property(json, "resolved")
         @attachments = self.class.object_array_property(json, "attachment")
+        @depends_on = self.class.object_array_property(json, "dependsOn")
+        @dependants = self.class.object_array_property(json, "dependants")
         @mr_diff = self.class.string_property(json, "mrDiff")
       end
     end

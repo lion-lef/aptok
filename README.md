@@ -2740,6 +2740,23 @@ Still future work:
 - broader RFC 9421 response-signature coverage beyond request signing and
   challenge retries.
 
+For a feature-by-feature breakdown against Fedify, including the ForgeFed and
+marketplace (FEP-0837) helpers, see [`docs/FEDIFY_PARITY.md`](docs/FEDIFY_PARITY.md).
+
+## Development
+
+The repository ships POSIX `sh` hooks under `.meta/hooks/` that check the spec —
+formatting, a type-checking build, and the full `crystal spec` suite:
+
+```sh
+.meta/hooks/check-all.sh                      # format (warn) + build + spec
+APTORK_STRICT_FORMAT=1 .meta/hooks/check-all.sh  # also enforce formatting (CI)
+```
+
+See [`.meta/hooks/README.md`](.meta/hooks/README.md) for details and how to wire
+them up as a git `pre-push` hook. CI runs the same hooks via
+`.github/workflows/spec.yml`.
+
 ## Using From `crater-openai`
 
 The app provider uses `Aptork::Transport`, `Aptork::PublishRequest`, and

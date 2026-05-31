@@ -147,7 +147,7 @@ module Aptork
     self_href : String,
     aliases : Array(String) = [] of String,
     properties : JsonMap = JsonMap.new,
-    links : Array(JsonMap) = [] of JsonMap,
+    links : Array(JsonMap) = [] of JsonMap
   ) : JsonMap
     default_link = JsonMap{
       "rel"  => json("self"),
@@ -177,7 +177,7 @@ module Aptork
     users_active_halfyear : Int64? = nil,
     users_active_month : Int64? = nil,
     local_posts : Int64 = 0_i64,
-    local_comments : Int64 = 0_i64,
+    local_comments : Int64 = 0_i64
   ) : JsonMap
     software = {
       "name"       => software_name,

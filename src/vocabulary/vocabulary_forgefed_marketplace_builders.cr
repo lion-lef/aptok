@@ -5,7 +5,7 @@ module Aptork
     item : JsonMap,
     name : String,
     price_specification : JsonMap? = nil,
-    to : Array(String) = [PUBLIC_COLLECTION],
+    to : Array(String) = [PUBLIC_COLLECTION]
   ) : JsonMap
     properties = JsonMap{
       "@context" => json([ACTIVITYSTREAMS_CONTEXT, MARKETPLACE_CONTEXT]),
@@ -30,7 +30,7 @@ module Aptork
     quantity : JsonMap,
     resource_conforms_to : String? = nil,
     available_quantity : JsonMap? = nil,
-    minimum_quantity : JsonMap? = nil,
+    minimum_quantity : JsonMap? = nil
   ) : JsonMap
     properties = JsonMap{
       "id"               => json(id),
@@ -54,7 +54,7 @@ module Aptork
     reciprocal : JsonMap? = nil,
     unit_based : Bool = false,
     to : Array(String) = [PUBLIC_COLLECTION],
-    location : JsonMap? = nil,
+    location : JsonMap? = nil
   ) : JsonMap
     properties = JsonMap{
       "@context"     => marketplace_context,
@@ -96,7 +96,7 @@ module Aptork
     stipulates : JsonMap,
     id : String? = nil,
     attributed_to : String? = nil,
-    reciprocal : JsonMap? = nil,
+    reciprocal : JsonMap? = nil
   ) : JsonMap
     agreement = JsonMap{
       "@context"   => marketplace_context,
@@ -113,7 +113,7 @@ module Aptork
     id : String,
     actor : String,
     agreement : JsonMap,
-    to : Array(String),
+    to : Array(String)
   ) : JsonMap
     properties = JsonMap{
       "@context" => marketplace_context,
@@ -145,7 +145,7 @@ module Aptork
     part_of : String,
     items : Array(JsonMap),
     next_id : String? = nil,
-    prev_id : String? = nil,
+    prev_id : String? = nil
   ) : JsonMap
     properties = JsonMap{
       "partOf"       => json(part_of),
@@ -161,7 +161,7 @@ module Aptork
     part_of : String,
     items : Array(JsonMap),
     next_id : String? = nil,
-    prev_id : String? = nil,
+    prev_id : String? = nil
   ) : JsonMap
     properties = JsonMap{
       "partOf" => json(part_of),
@@ -176,7 +176,7 @@ module Aptork
     id : String,
     items : Array(JsonMap),
     page : Int32? = nil,
-    size : Int32 = 20,
+    size : Int32 = 20
   ) : JsonMap
     normalized_size = size <= 0 ? 20 : size
     unless page
@@ -198,7 +198,7 @@ module Aptork
     id : String,
     items : Array(JsonMap),
     page : Int32? = nil,
-    size : Int32 = 20,
+    size : Int32 = 20
   ) : JsonMap
     normalized_size = size <= 0 ? 20 : size
     unless page
@@ -222,7 +222,7 @@ module Aptork
     first_cursor : String? = nil,
     last_cursor : String? = nil,
     size : Int32 = 20,
-    page_base : String = id,
+    page_base : String = id
   ) : JsonMap
     collection = ordered_collection(id, [] of JsonMap, total_items)
     collection["first"] = json(cursor_page_uri(page_base, first_cursor, size)) if first_cursor
@@ -236,7 +236,7 @@ module Aptork
     first_cursor : String? = nil,
     last_cursor : String? = nil,
     size : Int32 = 20,
-    page_base : String = id,
+    page_base : String = id
   ) : JsonMap
     collection = collection(id, [] of JsonMap, total_items)
     collection["first"] = json(cursor_page_uri(page_base, first_cursor, size)) if first_cursor
@@ -251,7 +251,7 @@ module Aptork
     cursor : String? = nil,
     next_cursor : String? = nil,
     prev_cursor : String? = nil,
-    size : Int32 = 20,
+    size : Int32 = 20
   ) : JsonMap
     page_id = cursor ? cursor_page_uri(id, cursor, size) : id
     page = ordered_collection_page(
@@ -264,6 +264,4 @@ module Aptork
     page["cursor"] = json(cursor) if cursor
     page
   end
-
-
 end

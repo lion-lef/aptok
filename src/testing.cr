@@ -59,7 +59,7 @@ module Aptork
       outbox_identifier : String? = nil,
       context_data : JSON::Any? = nil,
       document_loader : DocumentLoader? = nil,
-      context_loader : DocumentLoader? = nil,
+      context_loader : DocumentLoader? = nil
     ) : Context
       ctx = federation.create_context(context_data: context_data)
       ctx = ctx.with_inbound_request(request) if request
@@ -75,7 +75,7 @@ module Aptork
       request : Request = Request.new("GET", "/"),
       context_data : JSON::Any? = nil,
       document_loader : DocumentLoader? = nil,
-      context_loader : DocumentLoader? = nil,
+      context_loader : DocumentLoader? = nil
     ) : Context
       create_context(
         federation,
@@ -92,7 +92,7 @@ module Aptork
       request : Request? = nil,
       context_data : JSON::Any? = nil,
       document_loader : DocumentLoader? = nil,
-      context_loader : DocumentLoader? = nil,
+      context_loader : DocumentLoader? = nil
     ) : Context
       ctx = federation.create_context
       request ||= if identifier
@@ -124,7 +124,7 @@ module Aptork
       request : Request? = nil,
       context_data : JSON::Any? = nil,
       document_loader : DocumentLoader? = nil,
-      context_loader : DocumentLoader? = nil,
+      context_loader : DocumentLoader? = nil
     ) : Context
       ctx = federation.create_context
       request ||= Request.new(
@@ -147,7 +147,7 @@ module Aptork
       activity : JsonMap,
       identifier : String? = nil,
       headers : Hash(String, String) = {"Content-Type" => FEDERATION_JSONLD_CONTENT_TYPE},
-      context_data : JSON::Any? = nil,
+      context_data : JSON::Any? = nil
     ) : Response
       ctx = federation.create_context
       path = if identifier
@@ -168,7 +168,7 @@ module Aptork
       activity : JsonMap,
       identifier : String? = nil,
       headers : Hash(String, String) = {"Content-Type" => FEDERATION_JSONLD_CONTENT_TYPE},
-      context_data : JSON::Any? = nil,
+      context_data : JSON::Any? = nil
     ) : Response
       post_inbox_activity(federation, activity, identifier, headers, context_data)
     end
@@ -178,7 +178,7 @@ module Aptork
       identifier : String,
       activity : JsonMap,
       headers : Hash(String, String) = {"Content-Type" => FEDERATION_JSONLD_CONTENT_TYPE},
-      context_data : JSON::Any? = nil,
+      context_data : JSON::Any? = nil
     ) : Response
       ctx = federation.create_context
       federation.handle(Request.new(

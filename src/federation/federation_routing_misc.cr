@@ -101,6 +101,5 @@ module Aptork
       values.each { |key, value| attrs[key] = value }
       attrs
     end
-
   end
 end

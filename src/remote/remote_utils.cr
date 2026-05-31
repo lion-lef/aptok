@@ -1,6 +1,5 @@
 module Aptork
   module Remote
-
     private def self.key_pair_from_multikey(document : JsonMap, verification_method : String, owner : String?) : ActorKeyPair?
       key_id = document["id"]?.try(&.as_s?) || document["@id"]?.try(&.as_s?)
       return nil unless key_id == verification_method

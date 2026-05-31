@@ -107,7 +107,7 @@ module Aptork
       @telemetry : Telemetry = NoopTelemetry.new,
       @manually_start_queue : Bool = false,
       permanent_failure_status_codes : Enumerable(Int32) = Set{404, 410},
-      @trailing_slash_insensitive : Bool = false,
+      @trailing_slash_insensitive : Bool = false
     )
       @origin = validate_origin(@origin)
       @canonical_origin = validate_origin(canonical_origin || @origin)
@@ -145,7 +145,7 @@ module Aptork
       telemetry : Telemetry = NoopTelemetry.new,
       manually_start_queue : Bool = false,
       permanent_failure_status_codes : Enumerable(Int32) = Set{404, 410},
-      trailing_slash_insensitive : Bool = false,
+      trailing_slash_insensitive : Bool = false
     ) : Federation
       new(origin, transport, kv, outbox_queue, outbox_queue_name, outbox_retry_policy, inbox_queue, inbox_queue_name, inbox_retry_policy, fanout_queue, fanout_queue_name, fanout_retry_policy, fanout_threshold, document_loader, context_loader, document_get_provider, canonical_origin, handle_host, allow_private_address, user_agent, telemetry, manually_start_queue, permanent_failure_status_codes, trailing_slash_insensitive)
     end
@@ -172,7 +172,7 @@ module Aptork
       telemetry : Telemetry = NoopTelemetry.new,
       manually_start_queue : Bool = false,
       permanent_failure_status_codes : Enumerable(Int32) = Set{404, 410},
-      trailing_slash_insensitive : Bool = false,
+      trailing_slash_insensitive : Bool = false
     ) : Federation
       create(origin.web_origin, transport, kv, outbox_queue, outbox_queue_name, outbox_retry_policy, inbox_queue, inbox_queue_name, inbox_retry_policy, fanout_queue, fanout_queue_name, fanout_retry_policy, fanout_threshold, document_loader, context_loader, document_get_provider, origin.web_origin, origin.handle_host, allow_private_address, user_agent, telemetry, manually_start_queue, permanent_failure_status_codes, trailing_slash_insensitive)
     end
@@ -270,6 +270,5 @@ module Aptork
       normalized = normalize_handle_host(host)
       normalized == @handle_host || normalized == authority_from_origin(@canonical_origin)
     end
-
   end
 end

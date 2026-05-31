@@ -14,7 +14,7 @@ module Aptork
     updated : String? = nil,
     sensitive : Bool? = nil,
     source_content : String? = nil,
-    source_media_type : String? = nil,
+    source_media_type : String? = nil
   ) : JsonMap
     properties = JsonMap.new
     properties["name"] = json(name) if name
@@ -93,7 +93,7 @@ module Aptork
     hreflang : String? = nil,
     height : Int32? = nil,
     width : Int32? = nil,
-    type : String = "Link",
+    type : String = "Link"
   ) : JsonMap
     properties = JsonMap{
       "href" => json(href),
@@ -146,7 +146,7 @@ module Aptork
     actor : String,
     object : JsonMap | String,
     to : Array(String) = [PUBLIC_COLLECTION],
-    target : String? = nil,
+    target : String? = nil
   ) : JsonMap
     properties = JsonMap{
       "actor"     => json(actor),
@@ -164,7 +164,7 @@ module Aptork
     actor : String,
     to : Array(String) = [PUBLIC_COLLECTION],
     target : JsonMap | String | Nil = nil,
-    origin : JsonMap | String | Nil = nil,
+    origin : JsonMap | String | Nil = nil
   ) : JsonMap
     properties = JsonMap{
       "actor"     => json(actor),
@@ -226,7 +226,7 @@ module Aptork
     any_of : Array(JsonMap | String) = [] of JsonMap | String,
     to : Array(String) = [PUBLIC_COLLECTION],
     end_time : String? = nil,
-    closed : Bool? = nil,
+    closed : Bool? = nil
   ) : JsonMap
     properties = JsonMap{
       "actor"     => json(actor),
@@ -261,7 +261,7 @@ module Aptork
     context : String? = nil,
     public_key : JsonMap? = nil,
     archived : Bool = false,
-    moved_to : String? = nil,
+    moved_to : String? = nil
   ) : JsonMap
     properties = JsonMap{
       "name"      => json(name),
@@ -282,6 +282,4 @@ module Aptork
     properties["movedTo"] = json(moved_to) if moved_to
     forgefed_object("Repository", id, properties)
   end
-
-
 end

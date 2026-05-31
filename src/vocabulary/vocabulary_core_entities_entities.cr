@@ -1,6 +1,5 @@
 module Aptork
   module Vocab
-
     activity_type Accept, Activity
     activity_type Add, Activity
     activity_type Announce, Activity
@@ -179,7 +178,5 @@ module Aptork
     object_type Profile, StandardObject
     object_type Relationship, StandardObject
     object_type Video, Document
-
-
   end
 end

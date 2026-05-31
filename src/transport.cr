@@ -55,7 +55,7 @@ module Aptork
       @signature_key_id : String = "",
       @headers_provider : HeadersProvider? = nil,
       @post_provider : PostProvider? = nil,
-      @detailed_post_provider : DetailedPostProvider? = nil,
+      @detailed_post_provider : DetailedPostProvider? = nil
     )
     end
 
@@ -135,7 +135,7 @@ module Aptork
       activity : JsonMap,
       payload : String,
       source_headers : Hash(String, String) = Hash(String, String).new,
-      key_pair : ActorKeyPair? = nil,
+      key_pair : ActorKeyPair? = nil
     ) : String
       headers = HTTP::Headers{
         "Content-Type" => source_headers["Content-Type"]? || source_headers["content-type"]? || FEDERATION_JSONLD_CONTENT_TYPE,

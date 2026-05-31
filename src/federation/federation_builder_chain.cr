@@ -1,5 +1,4 @@
 module Aptork
-
   class FederationBuilder
     def set_following_dispatcher(path : String, dispatcher : ParamCursorCollectionDispatcher) : self
       add_step(->(federation : Federation) { federation.set_following_dispatcher(path, dispatcher) })
@@ -265,5 +264,4 @@ module Aptork
       self
     end
   end
-
 end

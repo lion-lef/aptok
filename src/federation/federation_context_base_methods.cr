@@ -253,6 +253,5 @@ module Aptork
     private def traverse_document_loader(options : TraverseCollectionOptions) : DocumentLoader
       options.document_loader || document_loader
     end
-
   end
 end

@@ -6,6 +6,5 @@ module Aptork
         activity
       end
     end
-
   end
 end

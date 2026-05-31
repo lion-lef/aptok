@@ -142,7 +142,7 @@ module Aptork
       recipient : Recipient,
       forwarder_identifier : String,
       activity : JsonMap,
-      options : ForwardActivityOptions,
+      options : ForwardActivityOptions
     ) : Bool
       excluded_ids = Set(String).new(options.exclude_actor_ids)
       excluded_ids << get_actor_uri(forwarder_identifier)

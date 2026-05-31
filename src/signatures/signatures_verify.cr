@@ -1,5 +1,4 @@
 module Aptork
-
   module Signatures
     def self.ed25519_public_key_pem_from_multibase(public_key_multibase : String) : String?
       decoded = base58btc_decode(public_key_multibase)
@@ -143,7 +142,7 @@ module Aptork
       algorithm : String,
       nonce : String? = nil,
       tag : String? = nil,
-      expires : Int64? = nil,
+      expires : Int64? = nil
     ) : String
       component_list = components.map { |component| format_component_identifier(component) }.join(" ")
       value = "(#{component_list});created=#{created};keyid=\"#{key_id}\";alg=\"#{algorithm}\""
@@ -160,7 +159,7 @@ module Aptork
       target_uri : String,
       fields : Hash(String, String),
       components : Array(String),
-      signature_params : String,
+      signature_params : String
     ) : String
       data = components.map do |component|
         component_name = component_identifier_name(component)

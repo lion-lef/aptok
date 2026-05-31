@@ -28,7 +28,5 @@ module Aptork
         @description = self.class.string_property(json, "description") || json["description"]?.try(&.as_h?).try { |description| description["content"]?.try(&.as_s?) }
       end
     end
-
-
   end
 end

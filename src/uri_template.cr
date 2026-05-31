@@ -22,7 +22,7 @@ module Aptork
           rest = path[prefix.size + 1..]
           return nil if rest.empty?
 
-          return {reserved_tail[2] => URI.decode_www_form(rest)}
+          return {reserved_tail[2] => URI.decode(rest)}
         end
       end
 
@@ -41,16 +41,16 @@ module Aptork
           operator, name = variable
           if operator == "+" && template_index == template_parts.size - 1
             rest = path_parts[path_index..]?.try(&.join("/")) || ""
-            params[name] = URI.decode_www_form(rest)
+            params[name] = URI.decode(rest)
             path_index = path_parts.size
           else
             return nil unless path_part
-            params[name] = URI.decode_www_form(path_part)
+            params[name] = URI.decode(path_part)
             path_index += 1
           end
         else
           return nil unless path_part
-          return nil unless part == URI.decode_www_form(path_part)
+          return nil unless part == URI.decode(path_part)
           path_index += 1
         end
 

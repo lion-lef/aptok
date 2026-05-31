@@ -1,0 +1,56 @@
+name: spec
+
+on:
+  push:
+    branches: [release, main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    container:
+      image: crystallang/crystal:1.12.2
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run spec-check hooks
+        env:
+          APTORK_STRICT_FORMAT: "1"
+        run: sh .meta/hooks/check-all.sh
+
+  sqlite:
+    # Integration test for the opt-in SQLite FFI driver, which links against
+    # libsqlite3. Kept separate so the default suite stays dependency-free.
+    runs-on: ubuntu-latest
+    container:
+      image: crystallang/crystal:1.12.2
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install SQLite
+        run: apt-get update && apt-get install -y libsqlite3-dev
+      - name: Run SQLite driver spec
+        run: crystal spec spec/drivers/sqlite_driver.cr
+
+  postgres:
+    # Integration test for the pure-Crystal Postgres wire driver against a real
+    # PostgreSQL server (SCRAM-SHA-256 auth + extended query protocol).
+    runs-on: ubuntu-latest
+    container:
+      image: crystallang/crystal:1.12.2
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: aptork
+          POSTGRES_PASSWORD: secret
+          POSTGRES_DB: aptork_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Postgres driver spec
+        env:
+          APTORK_TEST_POSTGRES_URL: postgres://aptork:secret@postgres:5432/aptork_test
+        run: crystal spec spec/drivers/postgres_driver.cr

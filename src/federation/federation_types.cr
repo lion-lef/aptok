@@ -10,6 +10,7 @@ require "../remote/remote"
 require "../uri_template"
 require "set"
 require "log"
+
 module Aptork
   class Context
   end
@@ -241,5 +242,4 @@ module Aptork
   end
 
   alias FederationSetup = Proc(Federation, Nil)
-
 end

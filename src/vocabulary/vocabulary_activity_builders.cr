@@ -6,7 +6,7 @@ module Aptork
     outbox : String? = nil,
     summary : String? = nil,
     followers : String? = nil,
-    context : String? = nil,
+    context : String? = nil
   ) : JsonMap
     properties = JsonMap{
       "name"      => json(name),
@@ -25,7 +25,7 @@ module Aptork
     repository : String,
     name : String,
     ref : String,
-    team : String? = nil,
+    team : String? = nil
   ) : JsonMap
     properties = JsonMap{
       "context" => json(repository),
@@ -40,7 +40,7 @@ module Aptork
     id : String,
     name : String,
     context : String? = nil,
-    href : String? = nil,
+    href : String? = nil
   ) : JsonMap
     properties = JsonMap{
       "name" => json(name),
@@ -55,7 +55,7 @@ module Aptork
     name : String,
     context : String? = nil,
     inbox : String? = nil,
-    outbox : String? = nil,
+    outbox : String? = nil
   ) : JsonMap
     forgefed_tracker("TicketTracker", id, name, context, inbox, outbox)
   end
@@ -65,7 +65,7 @@ module Aptork
     name : String,
     context : String? = nil,
     inbox : String? = nil,
-    outbox : String? = nil,
+    outbox : String? = nil
   ) : JsonMap
     forgefed_tracker("PatchTracker", id, name, context, inbox, outbox)
   end
@@ -76,7 +76,7 @@ module Aptork
     name : String,
     context : String?,
     inbox : String?,
-    outbox : String?,
+    outbox : String?
   ) : JsonMap
     properties = JsonMap{
       "name" => json(name),
@@ -96,7 +96,7 @@ module Aptork
     created : String = now,
     description : String? = nil,
     committed_by : String? = nil,
-    committed : String? = nil,
+    committed : String? = nil
   ) : JsonMap
     properties = JsonMap{
       "context"      => json(repository),
@@ -124,7 +124,7 @@ module Aptork
     commits : Array(JsonMap),
     hash_before : String,
     hash_after : String,
-    to : Array(String) = [PUBLIC_COLLECTION],
+    to : Array(String) = [PUBLIC_COLLECTION]
   ) : JsonMap
     properties = JsonMap{
       "@context"     => json([ACTIVITYSTREAMS_CONTEXT, FORGEFED_CONTEXT]),
@@ -149,7 +149,7 @@ module Aptork
     attributed_to : String? = nil,
     context : String? = nil,
     resolved : Bool? = nil,
-    attachment : Array(JsonMap) = [] of JsonMap,
+    attachment : Array(JsonMap) = [] of JsonMap
   ) : JsonMap
     properties = JsonMap{
       "@context" => json([ACTIVITYSTREAMS_CONTEXT, FORGEFED_CONTEXT]),
@@ -173,7 +173,7 @@ module Aptork
     target_branch : String,
     attributed_to : String? = nil,
     mr_diff : String? = nil,
-    patches : Array(JsonMap) = [] of JsonMap,
+    patches : Array(JsonMap) = [] of JsonMap
   ) : JsonMap
     offer = Aptork.object("Offer", nil, JsonMap{
       "@context" => json([ACTIVITYSTREAMS_CONTEXT, FORGEFED_CONTEXT]),
@@ -205,7 +205,7 @@ module Aptork
     name : String,
     price : String? = nil,
     currency : String? = nil,
-    to : Array(String) = [PUBLIC_COLLECTION],
+    to : Array(String) = [PUBLIC_COLLECTION]
   ) : JsonMap
     properties = JsonMap{
       "@context" => json([ACTIVITYSTREAMS_CONTEXT, MARKETPLACE_CONTEXT]),
@@ -223,7 +223,7 @@ module Aptork
     price : String,
     currency : String,
     id : String? = nil,
-    unit_text : String? = nil,
+    unit_text : String? = nil
   ) : JsonMap
     properties = JsonMap{
       "@context"      => json([ACTIVITYSTREAMS_CONTEXT, MARKETPLACE_CONTEXT]),
@@ -238,7 +238,7 @@ module Aptork
     id : String,
     name : String,
     summary : String? = nil,
-    attributed_to : String? = nil,
+    attributed_to : String? = nil
   ) : JsonMap
     properties = JsonMap{
       "@context" => json([ACTIVITYSTREAMS_CONTEXT, MARKETPLACE_CONTEXT]),
@@ -255,7 +255,7 @@ module Aptork
     summary : String? = nil,
     attributed_to : String? = nil,
     provider : JsonMap | String | Nil = nil,
-    terms_of_service : String? = nil,
+    terms_of_service : String? = nil
   ) : JsonMap
     properties = JsonMap{
       "@context" => json([ACTIVITYSTREAMS_CONTEXT, MARKETPLACE_CONTEXT]),
@@ -267,6 +267,4 @@ module Aptork
     properties["termsOfService"] = json(terms_of_service) if terms_of_service
     Aptork.object("Service", id, properties)
   end
-
-
 end

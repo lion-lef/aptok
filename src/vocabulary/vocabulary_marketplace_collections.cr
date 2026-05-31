@@ -6,7 +6,7 @@ module Aptork
     cursor : String? = nil,
     next_cursor : String? = nil,
     prev_cursor : String? = nil,
-    size : Int32 = 20,
+    size : Int32 = 20
   ) : JsonMap
     page_id = cursor ? cursor_page_uri(id, cursor, size) : id
     page = collection_page(
@@ -30,6 +30,4 @@ module Aptork
     uri.query = params.to_s
     uri.to_s
   end
-
-
 end

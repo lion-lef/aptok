@@ -280,7 +280,5 @@ module Aptork
         @team = self.class.string_property(json, "team")
       end
     end
-
-
   end
 end

@@ -3,7 +3,7 @@ module Aptork
     def outbound_delivery_payload(
       delivery : DeliveryConfig,
       activity : JsonMap,
-      sender_key_pairs : Array(ActorKeyPair) = [] of ActorKeyPair,
+      sender_key_pairs : Array(ActorKeyPair) = [] of ActorKeyPair
     ) : JsonMap
       delivery_payload = JsonMap{
         "inbox" => Aptork.json(delivery.inbox),
@@ -28,7 +28,7 @@ module Aptork
       activity : JsonMap,
       collection_name : String? = nil,
       sync_collection : Bool = false,
-      sender_key_pairs : Array(ActorKeyPair) = [] of ActorKeyPair,
+      sender_key_pairs : Array(ActorKeyPair) = [] of ActorKeyPair
     ) : JsonMap
       JsonMap{
         "type"             => Aptork.json("FanoutDelivery"),
@@ -48,7 +48,7 @@ module Aptork
       activity : JsonMap,
       payload : String,
       source_headers : Hash(String, String) = Hash(String, String).new,
-      sender_key_pairs : Array(ActorKeyPair) = [] of ActorKeyPair,
+      sender_key_pairs : Array(ActorKeyPair) = [] of ActorKeyPair
     ) : JsonMap
       delivery_payload = JsonMap{
         "inbox" => Aptork.json(delivery.inbox),
@@ -85,7 +85,7 @@ module Aptork
       activity : JsonMap,
       options : EnqueueOptions = EnqueueOptions.new,
       trusted : Bool = false,
-      context_data : JSON::Any? = nil,
+      context_data : JSON::Any? = nil
     ) : Nil
       queue = @inbox_queue
       raise ArgumentError.new("inbox queue is not configured") unless queue

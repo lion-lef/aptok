@@ -61,7 +61,7 @@ module Aptork
       expected_actor_id = actor_document["id"]?.try(&.as_s?) || ctx.get_actor_uri(identifier)
       return false if actor_ids.empty?
 
-      actor_ids.all? { |actor_id| actor_id == expected_actor_id }
+      actor_ids.all? { |actor_id| Aptork.same_resource_id?(actor_id, expected_actor_id) }
     end
 
     private def activity_actor_id(activity : JsonMap) : String?

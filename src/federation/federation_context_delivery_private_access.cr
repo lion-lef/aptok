@@ -184,19 +184,7 @@ module Aptork
     end
 
     private def same_uri_origin?(left : String, right : String) : Bool
-      left_origin = uri_origin(left)
-      right_origin = uri_origin(right)
-      !!left_origin && left_origin == right_origin
-    end
-
-    private def uri_origin(value : String) : String?
-      uri = URI.parse(value)
-      return nil unless uri.scheme && uri.host
-      host = uri.host.to_s
-      host = "#{host}:#{uri.port}" if uri.port
-      "#{uri.scheme}://#{host}"
-    rescue
-      nil
+      Aptork.same_resource_origin?(left, right)
     end
 
     private def telemetry_attributes(values : Hash(String, String)) : TelemetryAttributes

@@ -7,6 +7,7 @@ module Aptork
     getter inbound_request : Request?
     getter data : JSON::Any?
     getter key_pairs_dispatcher_identifier : String?
+    getter portable_authority : String?
     @canonical_origin : String
 
     def initialize(
@@ -21,34 +22,35 @@ module Aptork
       @document_loader_override : DocumentLoader? = nil,
       @context_loader_override : DocumentLoader? = nil,
       canonical_origin : String? = nil,
-      @key_pairs_dispatcher_identifier : String? = nil
+      @key_pairs_dispatcher_identifier : String? = nil,
+      @portable_authority : String? = nil
     )
       @origin = strip_trailing_slash(@origin)
       @canonical_origin = strip_trailing_slash(canonical_origin || @origin)
     end
 
     def with_recipient(recipient_identifier : String?) : Context
-      Context.new(@federation, @origin, @transport, recipient_identifier, @outbox_identifier, @inbound_request, @data, @delivery_state, @document_loader_override, @context_loader_override, @canonical_origin, @key_pairs_dispatcher_identifier)
+      Context.new(@federation, @origin, @transport, recipient_identifier, @outbox_identifier, @inbound_request, @data, @delivery_state, @document_loader_override, @context_loader_override, @canonical_origin, @key_pairs_dispatcher_identifier, @portable_authority)
     end
 
     def with_outbox(outbox_identifier : String?) : Context
-      Context.new(@federation, @origin, @transport, @recipient_identifier, outbox_identifier, @inbound_request, @data, @delivery_state, @document_loader_override, @context_loader_override, @canonical_origin, @key_pairs_dispatcher_identifier)
+      Context.new(@federation, @origin, @transport, @recipient_identifier, outbox_identifier, @inbound_request, @data, @delivery_state, @document_loader_override, @context_loader_override, @canonical_origin, @key_pairs_dispatcher_identifier, @portable_authority)
     end
 
     def with_inbound_request(request : Request?) : Context
-      Context.new(@federation, @origin, @transport, @recipient_identifier, @outbox_identifier, request, @data, @delivery_state, @document_loader_override, @context_loader_override, @canonical_origin, @key_pairs_dispatcher_identifier)
+      Context.new(@federation, @origin, @transport, @recipient_identifier, @outbox_identifier, request, @data, @delivery_state, @document_loader_override, @context_loader_override, @canonical_origin, @key_pairs_dispatcher_identifier, @portable_authority)
     end
 
     def with_document_loader(loader : DocumentLoader?) : Context
-      Context.new(@federation, @origin, @transport, @recipient_identifier, @outbox_identifier, @inbound_request, @data, @delivery_state, loader, @context_loader_override, @canonical_origin, @key_pairs_dispatcher_identifier)
+      Context.new(@federation, @origin, @transport, @recipient_identifier, @outbox_identifier, @inbound_request, @data, @delivery_state, loader, @context_loader_override, @canonical_origin, @key_pairs_dispatcher_identifier, @portable_authority)
     end
 
     def with_context_loader(loader : DocumentLoader?) : Context
-      Context.new(@federation, @origin, @transport, @recipient_identifier, @outbox_identifier, @inbound_request, @data, @delivery_state, @document_loader_override, loader, @canonical_origin, @key_pairs_dispatcher_identifier)
+      Context.new(@federation, @origin, @transport, @recipient_identifier, @outbox_identifier, @inbound_request, @data, @delivery_state, @document_loader_override, loader, @canonical_origin, @key_pairs_dispatcher_identifier, @portable_authority)
     end
 
     def with_data(data : JSON::Any?) : Context
-      Context.new(@federation, @origin, @transport, @recipient_identifier, @outbox_identifier, @inbound_request, data, @delivery_state, @document_loader_override, @context_loader_override, @canonical_origin, @key_pairs_dispatcher_identifier)
+      Context.new(@federation, @origin, @transport, @recipient_identifier, @outbox_identifier, @inbound_request, data, @delivery_state, @document_loader_override, @context_loader_override, @canonical_origin, @key_pairs_dispatcher_identifier, @portable_authority)
     end
 
     def clone(data : JSON::Any?) : Context
@@ -56,7 +58,11 @@ module Aptork
     end
 
     def with_key_pairs_dispatcher(identifier : String?) : Context
-      Context.new(@federation, @origin, @transport, @recipient_identifier, @outbox_identifier, @inbound_request, @data, @delivery_state, @document_loader_override, @context_loader_override, @canonical_origin, identifier)
+      Context.new(@federation, @origin, @transport, @recipient_identifier, @outbox_identifier, @inbound_request, @data, @delivery_state, @document_loader_override, @context_loader_override, @canonical_origin, identifier, @portable_authority)
+    end
+
+    def with_portable_authority(authority : String?) : Context
+      Context.new(@federation, @origin, @transport, @recipient_identifier, @outbox_identifier, @inbound_request, @data, @delivery_state, @document_loader_override, @context_loader_override, @canonical_origin, @key_pairs_dispatcher_identifier, normalize_portable_authority(authority))
     end
 
     def request : Request?
@@ -77,6 +83,14 @@ module Aptork
 
     def canonical_origin : String
       @canonical_origin
+    end
+
+    def resource_base_uri : String
+      if authority = @portable_authority
+        "#{AP_URI_PREFIX}#{authority}"
+      else
+        @canonical_origin
+      end
     end
 
     def host : String
@@ -105,7 +119,7 @@ module Aptork
 
     def get_actor_uri(identifier : String) : String
       if path = @federation.actor_alias_path(identifier)
-        "#{@canonical_origin}#{path}"
+        "#{resource_base_uri}#{path}"
       else
         uri_from_template(@federation.actor_path, identifier)
       end
@@ -147,7 +161,7 @@ module Aptork
     def get_collection_uri(name : String, params : Hash(String, String)) : String
       route = @federation.collection_routes.find { |candidate| candidate.name == name }
       raise ArgumentError.new("collection dispatcher is not configured for #{name}") unless route
-      "#{@canonical_origin}#{RouteTemplate.new(route.path).expand(params)}"
+      "#{resource_base_uri}#{RouteTemplate.new(route.path).expand(params)}"
     end
 
     def get_collection_uri(name : String, params : NamedTuple) : String
@@ -167,7 +181,7 @@ module Aptork
     def get_object_uri(type : String, params : Hash(String, String)) : String
       route = @federation.object_routes.find { |candidate| candidate.type == type }
       raise ArgumentError.new("object dispatcher is not configured for #{type}") unless route
-      "#{@canonical_origin}#{RouteTemplate.new(route.path).expand(params)}"
+      "#{resource_base_uri}#{RouteTemplate.new(route.path).expand(params)}"
     end
 
     def get_object_uri(type : String, params : NamedTuple) : String
@@ -199,6 +213,12 @@ module Aptork
     end
 
     def parse_uri(uri : String) : ParsedUri?
+      if parsed_ap = Aptork.parse_ap_uri(uri) || Aptork.parse_compatible_ap_uri(uri)
+        return nil unless @portable_authority == parsed_ap.authority
+
+        return parsed_uri_from_path(parsed_ap.path.empty? ? "/" : parsed_ap.path)
+      end
+
       parsed = URI.parse(uri)
       return nil unless parsed.scheme && parsed.host
       port = parsed.port
@@ -208,6 +228,12 @@ module Aptork
       return nil unless parsed_origin == @origin || parsed_origin == @canonical_origin
 
       path = @federation.route_path(parsed.path.empty? ? "/" : parsed.path)
+      parsed_uri_from_path(path)
+    rescue URI::Error
+      nil
+    end
+
+    private def parsed_uri_from_path(path : String) : ParsedUri?
       if identifier = @federation.actor_alias_identifier(path)
         return ParsedUri.new("actor", identifier, values: {"identifier" => identifier})
       end
@@ -252,8 +278,14 @@ module Aptork
       end
 
       nil
-    rescue URI::Error
-      nil
+    end
+
+    private def normalize_portable_authority(authority : String?) : String?
+      return nil unless authority
+
+      parsed = Aptork.parse_ap_uri("#{AP_URI_PREFIX}#{authority}/")
+      raise ArgumentError.new("portable authority must be a DID") unless parsed
+      parsed.authority
     end
 
     def actor(identifier : String) : JsonMap?

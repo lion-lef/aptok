@@ -39,7 +39,7 @@ module Aptork
     end
 
     private def uri_from_template(template : String, identifier : String) : String
-      "#{@canonical_origin}#{RouteTemplate.new(template).expand({"identifier" => identifier})}"
+      "#{resource_base_uri}#{RouteTemplate.new(template).expand({"identifier" => identifier})}"
     end
 
     private def string_params(params : NamedTuple) : Hash(String, String)

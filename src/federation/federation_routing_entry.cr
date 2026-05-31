@@ -255,7 +255,8 @@ module Aptork
         LookupObjectOptions.new(cross_origin: "trust")
       )
       return nil unless fetched
-      return nil unless object_id(fetched) == activity_id
+      fetched_id = object_id(fetched)
+      return nil unless fetched_id && Aptork.same_resource_id?(fetched_id, activity_id)
 
       fetched_actor_id = activity_actor_id(fetched)
       return nil unless fetched_actor_id

@@ -43,6 +43,10 @@ module Aptork
         return head ? head_response(response) : response
       end
 
+      if request.path.starts_with?("#{AP_GATEWAY_PATH}/")
+        return handle_apgateway(request, method, head, read_method)
+      end
+
       ctx = @federation.create_context(context_data: @options.context_data)
 
       if read_method
@@ -102,6 +106,46 @@ module Aptork
       links = automatic_webfinger_links(actor) + @federation.dispatch_webfinger_links(ctx, resource)
       aliases = webfinger_aliases(resource, actor, actor_id)
       webfinger_response(Aptork.webfinger_jrd(webfinger_subject(resource, actor), actor_id, aliases: aliases, links: links))
+    end
+
+    private def handle_apgateway(request : Request, method : String, head : Bool, read_method : Bool) : Response
+      gateway = apgateway_request(request.path)
+      return not_found(request) unless gateway
+
+      ctx = @federation.create_context(context_data: @options.context_data).with_portable_authority(gateway[:authority])
+      routed_request = Request.new(request.method, gateway[:path], request.headers, request.query, request.body)
+      if read_method
+        response = handle_get(ctx, routed_request)
+        return head ? head_response(response) : response
+      end
+
+      if method == "POST"
+        response = handle_post(ctx, routed_request)
+        return vary_accept_response(response) if accepts_activitypub?(request)
+
+        return response
+      end
+
+      Response.new(405, {"Allow" => "GET, HEAD, POST"}, "")
+    end
+
+    private def apgateway_request(path : String) : NamedTuple(authority: String, path: String)?
+      prefix = "#{AP_GATEWAY_PATH}/"
+      return nil unless path.starts_with?(prefix)
+
+      suffix = path[prefix.size..]
+      authority_end = suffix.index('/')
+      return nil unless authority_end
+
+      authority = URI.decode(suffix[0...authority_end])
+      return nil unless Aptork.parse_ap_uri("#{AP_URI_PREFIX}#{authority}/")
+
+      gateway_path = suffix[authority_end..]
+      return nil unless gateway_path.starts_with?("/")
+
+      {authority: authority, path: gateway_path}
+    rescue
+      nil
     end
 
     private def handle_get(ctx : Context, request : Request) : Response

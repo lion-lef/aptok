@@ -183,6 +183,10 @@ module Aptork
       cache : KvStore? = nil,
       options : ProofKeyLookupOptions = ProofKeyLookupOptions.new
     ) : ActorKeyPair?
+      if key_pair = did_key_proof_key(verification_method)
+        return key_pair
+      end
+
       cached = cached_proof_key(verification_method, cache)
       return cached if cached
 
@@ -194,6 +198,26 @@ module Aptork
         cache.set(proof_key_cache_key(verification_method), proof_key_cache_value(key), options.cache_ttl)
       end
       key
+    rescue
+      nil
+    end
+
+    private def self.did_key_proof_key(verification_method : String) : ActorKeyPair?
+      document_id, fragment = verification_method.split("#", 2)
+      return nil unless document_id.starts_with?("did:key:")
+
+      public_key_multibase = fragment || document_id["did:key:".size..]
+      return nil unless public_key_multibase.starts_with?("z")
+
+      public_key_pem = Signatures.ed25519_public_key_pem_from_multibase(public_key_multibase)
+      return nil unless public_key_pem
+
+      ActorKeyPair.new(
+        id: verification_method,
+        owner: document_id,
+        public_key_pem: public_key_pem,
+        algorithm: "ed25519"
+      )
     rescue
       nil
     end

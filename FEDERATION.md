@@ -32,7 +32,7 @@ applications built on top of it.
 | [FEP-8b32][fep-8b32] | Object Integrity Proofs | ✅ | `eddsa-jcs-2022` Ed25519 proofs (`create_object_proof`, `verify_object_proof?`). |
 | [FEP-521a][fep-521a] | Representing actor's public keys | ✅ | `Multikey` / `publicKeyMultibase` assertion methods (`Aptork.multikey`). |
 | [FEP-8fcf][fep-8fcf] | Followers collection synchronization | ✅ | `Collection-Synchronization` header generation during delivery. |
-| [FEP-0837][fep-0837] | Federated Marketplace | ✅ | Proposal/Intent/Commitment/Agreement builders and ValueFlows mapping. |
+| [FEP-0837][fep-0837] | Federated Marketplace | ✅ | Proposal/Intent/Commitment/Agreement builders, ValueFlows mapping, and optional strict validators. |
 | [FEP-044f][fep-044f] | Surface-level federation interop hints | 🟡 | `@context` term registered; no dedicated behavior yet. |
 | LD Signatures (RsaSignature2017) | — | ❌ | Only the newer Data Integrity proofs are implemented. |
 

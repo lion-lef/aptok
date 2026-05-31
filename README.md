@@ -25,9 +25,10 @@ framework surface for building federated apps:
 - NodeInfo client lookup with typed parsing helpers,
 - testing capture helpers,
 - injectable HTTP/signature hooks for tests,
-- ForgeFed repository, project, branch, commit, tag, push, ticket, tracker, and
-  merge request helpers,
-- marketplace offer/service/listing and FEP-0837 proposal/agreement helpers,
+- ForgeFed repository, project, branch, commit, tag, push, ticket, tracker,
+  merge request, typed activity, and strict validation helpers,
+- marketplace offer/service/listing and FEP-0837 proposal/agreement builder and
+  validation helpers,
 - a [`FEDERATION.md`](FEDERATION.md) (FEP-67ff) describing the implementation.
 
 It is distributed under the [0BSD license](LICENSE). It is not a full Fedify port yet. The current implementation focuses on the
@@ -2594,7 +2595,9 @@ commit = Aptork.forgefed_commit(
   "https://example.com/repos/aptork",
   "be9f48",
   "https://example.com/users/alice",
-  "Add signed delivery"
+  "Add signed delivery",
+  files_added: ["src/federation.cr"],
+  files_modified: ["README.md"]
 )
 
 push = Aptork.forgefed_push(
@@ -2641,7 +2644,8 @@ ticket = Aptork.forgefed_ticket(
   "Fix federation delivery",
   "Inbox delivery fails on 410 responses",
   assignee: "https://remote.example/users/maintainer",
-  attributed_to: "https://example.com/users/alice"
+  attributed_to: "https://example.com/users/alice",
+  depends_on: ["https://example.com/tickets/0"]
 )
 
 activity = Aptork.create(
@@ -2664,6 +2668,33 @@ mr = Aptork.forgefed_merge_request(
   "https://example.com/repos/aptork/branches/main",
   mr_diff: "https://example.com/mrs/1.diff"
 )
+```
+
+ForgeFed-specific interaction activities add the ForgeFed context and parse back
+to typed vocabulary classes:
+
+```crystal
+resolved = Aptork.forgefed_resolve(
+  "https://example.com/activities/resolve-1",
+  "https://example.com/users/alice",
+  ticket,
+  target: repo["id"].as_s
+)
+
+applied = Aptork.forgefed_apply(
+  "https://example.com/activities/apply-1",
+  "https://example.com/users/alice",
+  "https://example.com/patches/1",
+  target: branch["id"].as_s
+)
+```
+
+Use the optional strict validators when receiving ForgeFed documents from remote
+servers:
+
+```crystal
+return unless Aptork.valid_forgefed?(resolved)
+Aptork.validate_forgefed!(commit)
 ```
 
 ## Marketplace
@@ -2743,6 +2774,14 @@ offer = Aptork.marketplace_agreement_offer(
 )
 ```
 
+FEP-0837 documents can also be checked explicitly before application code accepts
+them:
+
+```crystal
+Aptork.valid_fep_0837?(proposal)
+Aptork.validate_fep_0837!(agreement)
+```
+
 These helpers build JSON-LD vocabulary objects. Routing, persistence,
 negotiation state machines, payment execution, and transaction settlement remain
 application concerns.
@@ -2799,8 +2838,9 @@ Implemented now:
 - simple and reserved URI template expansion,
 - ActivityStreams JSON-LD builders,
 - ForgeFed repository, project, branch, commit, tag, push, ticket,
-  ticket-tracker, patch-tracker, and merge-request builders,
-- marketplace offer/service/listing plus FEP-0837 proposal/agreement builders,
+  ticket-tracker, patch-tracker, merge-request, and typed activity builders,
+- marketplace offer/service/listing plus FEP-0837 proposal/agreement builders
+  and strict validators,
 - Ed25519/Multikey `eddsa-jcs-2022` Object Integrity Proof helpers,
 - remote Multikey fetching/caching for proof verification,
 - RSA-backed `DataIntegrityProof` helpers for local canonical JSON proofs,

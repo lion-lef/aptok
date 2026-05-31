@@ -25,6 +25,9 @@ module Aptork
   FORGEFED_TYPES   = %w[
     Repository Ticket MergeRequest Commit Branch Tag Push Project TicketTracker PatchTracker
   ]
+  FORGEFED_ACTIVITY_TYPES = %w[
+    Resolve Apply Grant Revoke
+  ]
 
   MARKETPLACE_CONTEXT = "https://w3id.org/fep/0837"
   VALUEFLOWS_CONTEXT  = "https://w3id.org/valueflows/ont/vf#"
@@ -56,7 +59,7 @@ module Aptork
       "#{MASTODON_CONTEXT}Emoji"
     elsif name == "PropertyValue"
       "#{SCHEMA_CONTEXT}PropertyValue"
-    elsif FORGEFED_TYPES.includes?(name)
+    elsif FORGEFED_TYPES.includes?(name) || FORGEFED_ACTIVITY_TYPES.includes?(name)
       "#{FORGEFED_CONTEXT}##{name}"
     elsif name.in?("Intent", "Measure", "Proposal", "Commitment", "Agreement")
       "#{VALUEFLOWS_CONTEXT}#{name}"
@@ -84,6 +87,8 @@ module Aptork
                   ["Ignore"]
                 when .in?("Repository", "Branch", "Commit", "Push", "Ticket", "MergeRequest")
                   ["ForgeFedObject"]
+                when .in?("Resolve", "Apply", "Grant", "Revoke")
+                  ["ForgeFedActivity"]
                 when .in?("Offer", "Product", "PriceSpecification", "Listing", "Intent", "Measure", "Proposal", "Commitment", "Agreement")
                   ["MarketplaceObject"]
                 when .in?("CryptographicKey", "Multikey")
@@ -95,7 +100,7 @@ module Aptork
                 else
                   [] of String
                 end
-    ancestors << "Activity" if ACTIVITY_TYPES.includes?(name)
+    ancestors << "Activity" if ACTIVITY_TYPES.includes?(name) || FORGEFED_ACTIVITY_TYPES.includes?(name)
     ([name] + ancestors).uniq
   end
 end

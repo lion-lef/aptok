@@ -105,7 +105,7 @@ Builders live in `src/vocabulary/vocabulary_forgefed*`; round-trip
 | Ticket | ✅ `Aptork.forgefed_ticket` | `isResolved` round-trips. |
 | TicketTracker | ✅ `Aptork.forgefed_ticket_tracker` | |
 | PatchTracker | ✅ `Aptork.forgefed_patch_tracker` | |
-| TicketDependency | 🟡 | `dependsOn`/`dependants` carried as plain links, no typed object. |
+| TicketDependency | 🟡 | `dependsOn`/`dependants` round-trip through typed accessors; no dedicated dependency object helper. |
 | Patch / Diff | ❌ | No dedicated helper; model patches via generic objects. |
 
 ### Activity / interaction types
@@ -114,9 +114,9 @@ Builders live in `src/vocabulary/vocabulary_forgefed*`; round-trip
 | --- | --- | --- |
 | Offer a ticket/patch (`Offer`) | ✅ `Aptork.forgefed_merge_request` | Builds an `Offer` with the patch as `object` and tracker as `target`. |
 | Push (`Push` activity) | ✅ `Aptork.forgefed_push` | |
-| Resolve / reopen ticket | 🟡 | Use generic `Aptork.activity("Resolve", …)`; no ForgeFed-typed wrapper. |
-| Apply a patch (`Apply`) | 🟡 | Same — generic activity, no dedicated builder. |
-| Grant / Revoke access | ❌ | Permission delegation not modelled. |
+| Resolve / reopen ticket | ✅ `Aptork.forgefed_resolve` | Parses as `Aptork::Vocab::Resolve`. |
+| Apply a patch (`Apply`) | ✅ `Aptork.forgefed_apply` | Parses as `Aptork::Vocab::Apply`. |
+| Grant / Revoke access | ✅ `Aptork.forgefed_grant`, `Aptork.forgefed_revoke` | Typed activity builders with ForgeFed context. |
 
 ### Properties & context
 
@@ -125,13 +125,12 @@ Builders live in `src/vocabulary/vocabulary_forgefed*`; round-trip
 | ForgeFed `@context` injection | ✅ | Attached by every `forgefed_*` builder. |
 | `committedBy` / `hash` / `committed` | ✅ | On `forgefed_commit`. |
 | `isResolved` | ✅ | On `forgefed_ticket`. |
-| `dependsOn` / `dependants` typed accessors | ❌ | Present in JSON only. |
-| `filesAdded` / `filesModified` / `filesRemoved` | ❌ | Commit file lists not exposed. |
+| `dependsOn` / `dependants` typed accessors | ✅ | On `Ticket`. |
+| `filesAdded` / `filesModified` / `filesRemoved` | ✅ | On `Commit`; builders accept file-list arrays. |
+| Strict validation | ✅ | `valid_forgefed?`, `validate_forgefed!`, and validation error helpers. |
 
-**Gaps:** there is no dedicated `Patch`/`Diff` object helper, the `Resolve`/
-`Apply`/`Grant`/`Revoke` activities are only reachable through the generic
-`Aptork.activity` builder, and not all optional collections (e.g. `team`,
-`dependants`) or commit file-lists have typed accessors.
+**Gaps:** there is no dedicated `Patch`/`Diff` object helper, and not all
+optional collections (e.g. `team`) have typed accessors.
 
 ## Marketplace / FEP-0837 coverage
 
@@ -149,8 +148,9 @@ terms are mapped in `Aptork.marketplace_context`.
 | Agreement / Offer-agreement | ✅ `Aptork.marketplace_agreement`, `marketplace_agreement_offer`, `Agreement` |
 | Payment link | ✅ `Aptork.marketplace_payment_link` |
 
-**Gaps:** deserialization does not enforce FEP-0837 required properties (e.g. a
-`Listing` may parse with an empty `to`); validation is left to the caller.
+**Validation:** deserialization remains permissive, but callers can opt into
+strict checks with `valid_fep_0837?`, `validate_fep_0837!`, and validation error
+helpers before accepting remote documents.
 
 ## Suggested roadmap (genuine missing parts)
 
@@ -160,6 +160,4 @@ terms are mapped in `Aptork.marketplace_context`.
    interfaces (SQLite and PostgreSQL `SqlConnection`s already ship).
 4. A full RFC 6570 URI Template implementation (the current `RouteTemplate` is a
    pragmatic subset — simple `{var}` and trailing `{+var}` operators).
-5. Optional strict-mode validators for ForgeFed and FEP-0837 documents.
-6. ForgeFed-typed `Resolve`/`Apply`/`Grant`/`Revoke` activity builders and typed
-   accessors for `dependsOn`/`dependants` and commit file-lists.
+5. Dedicated ForgeFed `Patch`/`Diff` object helpers.

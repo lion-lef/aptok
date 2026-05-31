@@ -72,6 +72,14 @@ module Aptork
           Update.from_json_ld(value)
         when "View"
           View.from_json_ld(value)
+        when "Resolve"
+          Resolve.from_json_ld(value)
+        when "Apply"
+          Apply.from_json_ld(value)
+        when "Grant"
+          Grant.from_json_ld(value)
+        when "Revoke"
+          Revoke.from_json_ld(value)
         when "Article"
           Article.from_json_ld(value)
         when "Audio"
@@ -128,10 +136,14 @@ module Aptork
               MarketplaceObject.from_json_ld(value)
             elsif FORGEFED_TYPES.includes?(type) && forgefed_context?(value)
               ForgeFedObject.from_json_ld(value)
+            elsif FORGEFED_ACTIVITY_TYPES.includes?(type) && forgefed_context?(value)
+              Activity.from_json_ld(value)
             elsif ACTIVITY_TYPES.includes?(type)
               Activity.from_json_ld(value)
             elsif FORGEFED_TYPES.includes?(type)
               ForgeFedObject.from_json_ld(value)
+            elsif FORGEFED_ACTIVITY_TYPES.includes?(type)
+              Activity.from_json_ld(value)
             elsif MARKETPLACE_TYPES.includes?(type)
               MarketplaceObject.from_json_ld(value)
             else
@@ -336,6 +348,14 @@ module Aptork
           Update.from_json_ld(value)
         when "View"
           View.from_json_ld(value)
+        when "Resolve"
+          Resolve.from_json_ld(value)
+        when "Apply"
+          Apply.from_json_ld(value)
+        when "Grant"
+          Grant.from_json_ld(value)
+        when "Revoke"
+          Revoke.from_json_ld(value)
         else
           new(value)
         end

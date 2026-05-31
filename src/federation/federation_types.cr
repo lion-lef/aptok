@@ -240,6 +240,4 @@ module Aptork
       @fibers.size.times { @stop.send(nil) }
     end
   end
-
-  alias FederationSetup = Proc(Federation, Nil)
 end

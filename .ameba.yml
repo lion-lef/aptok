@@ -1,0 +1,144 @@
+# Project-specific Ameba configuration, based on the Crystal shards template:
+# https://raw.githubusercontent.com/crystal-lang/shards/refs/heads/master/.ameba.yml
+#
+# Aptork keeps `crystal tool format --check`, build, and spec execution as
+# separate CI steps. Ameba is configured here as a focused static-analysis pass
+# for the library and default specs.
+
+Version: "1.7.0-dev"
+
+Excluded:
+  - lib/**
+  - bin/**
+  - experiments/**
+
+# Documentation
+# =========================
+
+# Existing TODO/FIXME comments are tracked through issues and PRs.
+Documentation/DocumentationAdmonition:
+  Enabled: false
+
+# Lint
+# =========================
+
+Lint/DuplicateBranch:
+  Enabled: true
+  IgnoreLiteralBranches: true
+  IgnoreConstantBranches: true
+
+Lint/DuplicateMethodSignature:
+  Enabled: true
+
+# Formatting is already enforced by `.meta/hooks/check-format.sh` in CI.
+Lint/Formatting:
+  Enabled: false
+
+# Aptork has several JSON-LD and test helper paths where `not_nil!` follows an
+# explicit protocol guard; auditing them is useful, but not as a default lint.
+Lint/NotNil:
+  Enabled: false
+
+# Specs intentionally close over booleans and contexts in nested route/listener
+# callbacks to assert side effects.
+Lint/ShadowingOuterLocalVar:
+  Enabled: false
+
+Lint/UnusedArgument:
+  Enabled: true
+  IgnoreDefs: true
+  IgnoreBlocks: false
+  IgnoreProcs: false
+
+Lint/UnusedBlockArgument:
+  Enabled: true
+
+Lint/UselessAssign:
+  ExcludeTypeDeclarations: true
+
+# Metrics
+# =========================
+
+# Federation routing and protocol parsing branches mirror ActivityPub,
+# WebFinger, NodeInfo, HTTP signature, and SQL-wire behavior.
+Metrics/CyclomaticComplexity:
+  Enabled: false
+
+# Naming
+# =========================
+
+Naming/AsciiIdentifiers:
+  Enabled: true
+  IgnoreSymbols: false
+
+Naming/BinaryOperatorParameterName:
+  Enabled: true
+  ExcludedOperators: ["[]", "[]?", "[]=", "<<", ">>", "`", "=~", "!~"]
+  AllowedNames: ["other"]
+
+Naming/BlockParameterName:
+  Enabled: true
+  MinNameLength: 2
+  AllowNamesEndingInNumbers: true
+  AllowedNames: ["_", "id", "io", "ex", "db", "kv"]
+  ForbiddenNames: ["foo", "bar", "baz"]
+
+Naming/ConstantNames:
+  Enabled: true
+
+Naming/Filename:
+  Enabled: true
+
+Naming/MethodNames:
+  Enabled: true
+
+Naming/PredicateName:
+  Enabled: true
+  Excluded:
+    - src/federation/federation_context_base_types.cr
+
+# Public names follow ActivityPub, NodeInfo, ForgeFed, HTTP signature, and SQL
+# vocabulary terms where those protocol names are part of the exposed API.
+Naming/QueryBoolMethods:
+  Enabled: true
+  Excluded:
+    - src/federation/federation_core.cr
+    - src/federation/federation_context_base_types.cr
+    - src/vocabulary/**
+
+Naming/RescuedExceptionsVariableName:
+  Enabled: true
+  AllowedNames: ["e", "ex", "error", "exception"]
+
+Naming/TypeNames:
+  Enabled: true
+
+Naming/VariableNames:
+  Enabled: true
+
+# Style
+# =========================
+
+Style/RedundantNext:
+  Enabled: true
+
+# Guard-clause returns keep request routing and parser exits readable.
+Style/RedundantReturn:
+  Enabled: false
+
+Style/RedundantSelf:
+  Enabled: true
+  AllowedMethodNames: ["in?", "inspect", "not_nil!"]
+
+Style/VerboseBlock:
+  Enabled: true
+  ExcludeMultipleLineBlocks: true
+  ExcludeCallsWithBlock: true
+  ExcludePrefixOperators: true
+  ExcludeOperators: true
+  ExcludeSetters: false
+  MaxLineLength: 140
+  MaxLength: 50
+
+Style/WhileTrue:
+  Enabled: true

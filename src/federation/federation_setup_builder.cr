@@ -1,16 +1,7 @@
 module Aptork
   class Federation
-    def set_featured_tags_dispatcher(path : String, dispatcher : ParamCursorCollectionDispatcher) : self
-      set_builtin_cursor_collection_dispatcher("featured_tags", path, dispatcher)
-      @featured_tags_path = path
-      self
-    end
-
     def set_collection_dispatcher(name : String, path : String, dispatcher : CollectionDispatcher) : self
-      param_dispatcher = ->(ctx : Context, params : Hash(String, String)) do
-        dispatcher.call(ctx, params["identifier"]? || "")
-      end
-      set_array_collection_dispatcher(name, path, param_dispatcher, ordered: false)
+      set_array_collection_dispatcher(name, path, identifier_collection_dispatcher(dispatcher), ordered: false)
     end
 
     def set_collection_dispatcher(name : String, path : String, dispatcher : ParamCollectionDispatcher) : self
@@ -26,10 +17,7 @@ module Aptork
     end
 
     def set_ordered_collection_dispatcher(name : String, path : String, dispatcher : CollectionDispatcher) : self
-      param_dispatcher = ->(ctx : Context, params : Hash(String, String)) do
-        dispatcher.call(ctx, params["identifier"]? || "")
-      end
-      set_array_collection_dispatcher(name, path, param_dispatcher, ordered: true)
+      set_array_collection_dispatcher(name, path, identifier_collection_dispatcher(dispatcher), ordered: true)
     end
 
     def set_ordered_collection_dispatcher(name : String, path : String, dispatcher : ParamCollectionDispatcher) : self
@@ -74,24 +62,28 @@ module Aptork
     end
 
     private def set_array_collection_dispatcher(name : String, path : String, dispatcher : ParamCollectionDispatcher, *, ordered : Bool) : self
-      validate_path!(path)
-      @collection_routes.reject! { |route| route.name == name && route.path == path }
-      @collection_routes << CollectionRoute.new(name, path, dispatcher, nil, nil, ordered)
-      self
+      set_collection_route(CollectionRoute.new(name, path, dispatcher, nil, nil, ordered))
     end
 
     private def set_cursor_collection_dispatcher(name : String, path : String, dispatcher : ParamCursorCollectionDispatcher, *, ordered : Bool) : self
-      validate_path!(path)
-      @collection_routes.reject! { |route| route.name == name && route.path == path }
-      @collection_routes << CollectionRoute.new(name, path, nil, dispatcher, nil, ordered)
-      self
+      set_collection_route(CollectionRoute.new(name, path, nil, dispatcher, nil, ordered))
     end
 
     private def set_filtered_cursor_collection_dispatcher(name : String, path : String, dispatcher : ParamFilteredCursorCollectionDispatcher, *, ordered : Bool) : self
-      validate_path!(path)
-      @collection_routes.reject! { |route| route.name == name && route.path == path }
-      @collection_routes << CollectionRoute.new(name, path, nil, nil, dispatcher, ordered)
+      set_collection_route(CollectionRoute.new(name, path, nil, nil, dispatcher, ordered))
+    end
+
+    private def set_collection_route(route : CollectionRoute) : self
+      validate_path!(route.path)
+      @collection_routes.reject! { |existing| existing.name == route.name && existing.path == route.path }
+      @collection_routes << route
       self
+    end
+
+    private def identifier_collection_dispatcher(dispatcher : CollectionDispatcher) : ParamCollectionDispatcher
+      ->(ctx : Context, params : Hash(String, String)) do
+        dispatcher.call(ctx, params["identifier"]? || "")
+      end
     end
 
     private def set_builtin_cursor_collection_dispatcher(name : String, path : String, dispatcher : CursorCollectionDispatcher) : self

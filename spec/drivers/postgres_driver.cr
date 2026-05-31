@@ -1,4 +1,4 @@
-# Integration spec for the pure-Crystal PostgreSQL wire driver.
+# Integration spec for the crystal-pg-backed PostgreSQL driver.
 #
 # Not named `*_spec.cr`, so `crystal spec` does not auto-run it. It needs a
 # reachable PostgreSQL server; point it at one with the connection URL and run
@@ -9,6 +9,7 @@
 #
 require "spec"
 require "../../src/aptork"
+require "../../src/store/postgres"
 
 POSTGRES_URL = ENV["APTORK_TEST_POSTGRES_URL"]?
 
@@ -27,7 +28,7 @@ describe Aptork::PostgresConnection do
   else
     it "authenticates and round-trips KV values" do
       conn = fresh_connection
-      store = Aptork::SqlKvStore.new(conn, dialect: Aptork::SqlDialect::Postgres, table: "aptork_kv_#{suffix}")
+      store = Aptork::SqlKvStore.new(conn, table: "aptork_kv_#{suffix}")
       store.set("actor:alice", "ok")
       store.get("actor:alice").should eq("ok")
       store.delete("actor:alice")
@@ -37,7 +38,7 @@ describe Aptork::PostgresConnection do
 
     it "compares and swaps atomically" do
       conn = fresh_connection
-      store = Aptork::SqlKvStore.new(conn, dialect: Aptork::SqlDialect::Postgres, table: "aptork_cas_#{suffix}")
+      store = Aptork::SqlKvStore.new(conn, table: "aptork_cas_#{suffix}")
       store.cas("lock", nil, "alice").should be_true
       store.cas("lock", nil, "bob").should be_false
       store.cas("lock", "alice", "bob").should be_true
@@ -47,7 +48,7 @@ describe Aptork::PostgresConnection do
 
     it "processes and dead-letters queue messages" do
       conn = fresh_connection
-      queue = Aptork::SqlMessageQueue.new(conn, dialect: Aptork::SqlDialect::Postgres, table: "aptork_q_#{suffix}")
+      queue = Aptork::SqlMessageQueue.new(conn, table: "aptork_q_#{suffix}")
       queue.enqueue("outbox", Aptork.object("Note", "https://local.example/notes/1"))
       queue.depth("outbox").should eq(1)
       queue.process_one("outbox") { |_m| }.should eq(Aptork::QueueProcessResult::Processed)

@@ -177,68 +177,6 @@ module Aptork
       create(origin.web_origin, transport, kv, outbox_queue, outbox_queue_name, outbox_retry_policy, inbox_queue, inbox_queue_name, inbox_retry_policy, fanout_queue, fanout_queue_name, fanout_retry_policy, fanout_threshold, document_loader, context_loader, document_get_provider, origin.web_origin, origin.handle_host, allow_private_address, user_agent, telemetry, manually_start_queue, permanent_failure_status_codes, trailing_slash_insensitive)
     end
 
-    def self.build(
-      origin : String,
-      transport : Transport = Transport.new(signature_enabled: false),
-      kv : KvStore? = nil,
-      outbox_queue : MessageQueue? = nil,
-      outbox_queue_name : String = "outbox",
-      outbox_retry_policy : RetryPolicy = RetryPolicy.new,
-      inbox_queue : MessageQueue? = nil,
-      inbox_queue_name : String = "inbox",
-      inbox_retry_policy : RetryPolicy = RetryPolicy.new,
-      fanout_queue : MessageQueue? = nil,
-      fanout_queue_name : String = "fanout",
-      fanout_retry_policy : RetryPolicy = RetryPolicy.new,
-      fanout_threshold : Int32 = 50,
-      document_loader : DocumentLoader = Remote.default_document_loader,
-      context_loader : DocumentLoader? = nil,
-      document_get_provider : DocumentGetProvider? = nil,
-      canonical_origin : String? = nil,
-      handle_host : String? = nil,
-      allow_private_address : Bool = false,
-      user_agent : String = Remote.default_user_agent,
-      telemetry : Telemetry = NoopTelemetry.new,
-      manually_start_queue : Bool = false,
-      permanent_failure_status_codes : Enumerable(Int32) = Set{404, 410},
-      trailing_slash_insensitive : Bool = false,
-      &block : FederationBuilder -> Nil
-    ) : Federation
-      builder = FederationBuilder.new
-      block.call(builder)
-      builder.build(origin, transport, kv, outbox_queue, outbox_queue_name, outbox_retry_policy, inbox_queue, inbox_queue_name, inbox_retry_policy, fanout_queue, fanout_queue_name, fanout_retry_policy, fanout_threshold, document_loader, context_loader, document_get_provider, canonical_origin, handle_host, allow_private_address, user_agent, telemetry, manually_start_queue, permanent_failure_status_codes, trailing_slash_insensitive)
-    end
-
-    def self.build(
-      origin : FederationOrigin,
-      transport : Transport = Transport.new(signature_enabled: false),
-      kv : KvStore? = nil,
-      outbox_queue : MessageQueue? = nil,
-      outbox_queue_name : String = "outbox",
-      outbox_retry_policy : RetryPolicy = RetryPolicy.new,
-      inbox_queue : MessageQueue? = nil,
-      inbox_queue_name : String = "inbox",
-      inbox_retry_policy : RetryPolicy = RetryPolicy.new,
-      fanout_queue : MessageQueue? = nil,
-      fanout_queue_name : String = "fanout",
-      fanout_retry_policy : RetryPolicy = RetryPolicy.new,
-      fanout_threshold : Int32 = 50,
-      document_loader : DocumentLoader = Remote.default_document_loader,
-      context_loader : DocumentLoader? = nil,
-      document_get_provider : DocumentGetProvider? = nil,
-      allow_private_address : Bool = false,
-      user_agent : String = Remote.default_user_agent,
-      telemetry : Telemetry = NoopTelemetry.new,
-      manually_start_queue : Bool = false,
-      permanent_failure_status_codes : Enumerable(Int32) = Set{404, 410},
-      trailing_slash_insensitive : Bool = false,
-      &block : FederationBuilder -> Nil
-    ) : Federation
-      builder = FederationBuilder.new
-      block.call(builder)
-      builder.build(origin, transport, kv, outbox_queue, outbox_queue_name, outbox_retry_policy, inbox_queue, inbox_queue_name, inbox_retry_policy, fanout_queue, fanout_queue_name, fanout_retry_policy, fanout_threshold, document_loader, context_loader, document_get_provider, allow_private_address, user_agent, telemetry, manually_start_queue, permanent_failure_status_codes, trailing_slash_insensitive)
-    end
-
     def create_context(recipient_identifier : String? = nil, context_data : JSON::Any? = nil) : Context
       Context.new(self, @origin, @transport, recipient_identifier, data: context_data, canonical_origin: @canonical_origin)
     end

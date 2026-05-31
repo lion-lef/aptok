@@ -48,66 +48,32 @@ require "aptork"
 
 ## Federation
 
+`Aptork.federation` creates a federation and configures it with a Crystal-style
+DSL. The block uses the federation as its implicit receiver, while still
+accepting an explicit block argument when preferred:
+
 ```crystal
-federation = Aptork::Federation.create("https://example.com")
+federation = Aptork.federation("https://example.com") do
+  actor "/users/{identifier}" do |ctx, identifier|
+    Aptork.actor(
+      "Person",
+      ctx.get_actor_uri(identifier),
+      identifier,
+      ctx.get_inbox_uri(identifier),
+      ctx.get_outbox_uri(identifier)
+    ).as(Aptork::JsonMap?)
+  end
 
-federation.set_actor_dispatcher("/users/{identifier}", ->(ctx : Aptork::Context, identifier : String) do
-  Aptork.actor(
-    "Person",
-    ctx.get_actor_uri(identifier),
-    identifier,
-    ctx.get_inbox_uri(identifier),
-    ctx.get_outbox_uri(identifier),
-    name: "Alice",
-    followers: ctx.get_followers_uri(identifier),
-    following: ctx.get_following_uri(identifier),
-    shared_inbox: ctx.get_inbox_uri
-  )
-end)
-
-federation.set_inbox_listeners("/users/{identifier}/inbox", "/inbox")
-  .with_idempotency
-  .on("Create", ->(_ctx : Aptork::Context, activity : Aptork::JsonMap) do
-    puts activity["id"]?
-  end)
+  inbox "/users/{identifier}/inbox", "/inbox" do |routes|
+    routes.with_idempotency
+    routes.on "Create" do |_ctx, activity|
+      puts activity["id"]?
+    end
+  end
+end
 
 ctx = federation.create_context
 actor = ctx.actor("alice")
-```
-
-For larger applications, use the Fedify-style builder to register dispatchers
-and listeners before runtime options are available:
-
-```crystal
-builder = Aptork.create_federation_builder
-
-builder.set_actor_dispatcher("/users/{identifier}", ->(ctx : Aptork::Context, identifier : String) do
-  Aptork.actor(
-    "Person",
-    ctx.get_actor_uri(identifier),
-    identifier,
-    ctx.get_inbox_uri(identifier),
-    ctx.get_outbox_uri(identifier)
-  )
-end)
-
-builder.set_inbox_listeners("/users/{identifier}/inbox", "/inbox")
-  .on("Create", ->(_ctx : Aptork::Context, _activity : Aptork::JsonMap) { nil })
-
-federation = builder.build(
-  "https://example.com",
-  kv: Aptork::MemoryKvStore.new
-)
-```
-
-`Federation.build` is a block-style shortcut around the same builder:
-
-```crystal
-federation = Aptork::Federation.build("https://example.com") do |builder|
-  builder.set_outbox_dispatcher("/users/{identifier}/outbox", ->(_ctx, _identifier) do
-    [] of Aptork::JsonMap
-  end)
-end
 ```
 
 ## Request Handling
@@ -2310,19 +2276,22 @@ For durable, transactional persistence without an external broker, Aptork
 provides SQL-backed implementations of both the `KvStore` and `MessageQueue`
 interfaces. `SqlKvStore` and `SqlMessageQueue` work over any object that includes
 the `Aptork::SqlConnection` module; the bundled connections target SQLite and
-PostgreSQL, and the `SqlDialect` enum selects the right placeholder/upsert
-syntax. Both stores `migrate` their tables on construction by default.
+PostgreSQL through Crystal's `DB` ecosystem, and the connection supplies the
+right placeholder/upsert dialect by default. Both stores `migrate` their tables
+on construction by default.
 
-PostgreSQL is supported by `Aptork::PostgresConnection`, a **pure-Crystal** v3
-wire-protocol client (no `libpq` or external shard). It speaks the trust,
-cleartext, MD5, and SCRAM-SHA-256 auth methods and uses the extended query
-protocol, so it builds as part of the default toolkit:
+PostgreSQL is supported by `Aptork::PostgresConnection`, a thin adapter over
+`will/crystal-pg`. Pull it in explicitly when you need PostgreSQL-backed
+storage:
 
 ```crystal
+require "aptork"
+require "aptork/store/postgres"
+
 conn = Aptork::PostgresConnection.connect("postgres://user:pass@localhost:5432/aptork")
 
-store = Aptork::SqlKvStore.new(conn, dialect: Aptork::SqlDialect::Postgres)
-queue = Aptork::SqlMessageQueue.new(conn, dialect: Aptork::SqlDialect::Postgres)
+store = Aptork::SqlKvStore.new(conn)
+queue = Aptork::SqlMessageQueue.new(conn)
 
 federation = Aptork::Federation.create(
   "https://example.com",
@@ -2332,9 +2301,9 @@ federation = Aptork::Federation.create(
 )
 ```
 
-SQLite is supported by `Aptork::SqliteConnection`, a thin FFI binding over the
-system `libsqlite3`. Because it links a native library, it is **opt-in**: it is
-not pulled in by `require "aptork"`, so add it explicitly when you need it:
+SQLite is supported by `Aptork::SqliteConnection`, a thin adapter over
+`crystal-lang/crystal-sqlite3`. Because it links SQLite at compile time, it is
+also opt-in:
 
 ```crystal
 require "aptork"
@@ -2342,8 +2311,8 @@ require "aptork/store/sqlite"
 
 conn = Aptork::SqliteConnection.open("aptork.db") # or ":memory:"
 
-store = Aptork::SqlKvStore.new(conn, dialect: Aptork::SqlDialect::Sqlite)
-queue = Aptork::SqlMessageQueue.new(conn, dialect: Aptork::SqlDialect::Sqlite)
+store = Aptork::SqlKvStore.new(conn)
+queue = Aptork::SqlMessageQueue.new(conn)
 ```
 
 `SqlKvStore` supports `get`/`set` with TTL expiry, `delete`, prefix `list`, and
@@ -2799,7 +2768,7 @@ application concerns.
 Implemented now:
 
 - `Federation` registry and `Context` URI helpers,
-- `FederationBuilder` for deferred Fedify-style setup,
+- Crystal-style `Aptork.federation` setup DSL,
 - Fedify-style `FederationOrigin` handle/web origin object,
 - Fedify-style HTTP(S) origin-root validation,
 - optional trailing-slash-insensitive route matching,
@@ -2881,6 +2850,7 @@ formatting, a type-checking build, and the full `crystal spec` suite:
 ```sh
 .meta/hooks/check-all.sh                      # format (warn) + build + spec
 APTORK_STRICT_FORMAT=1 .meta/hooks/check-all.sh  # also enforce formatting (CI)
+ameba                                          # optional static analysis
 ```
 
 See [`.meta/hooks/README.md`](.meta/hooks/README.md) for details and how to wire

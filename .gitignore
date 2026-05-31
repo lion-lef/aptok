@@ -1,0 +1,7 @@
+/lib/
+/.crystal/
+/.shards/
+/*.log
+
+# Aptork is a library shard; applications should lock dependency versions.
+/shard.lock

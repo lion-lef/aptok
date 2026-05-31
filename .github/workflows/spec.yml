@@ -18,8 +18,9 @@ jobs:
         run: sh .meta/hooks/check-all.sh
 
   sqlite:
-    # Integration test for the opt-in SQLite FFI driver, which links against
-    # libsqlite3. Kept separate so the default suite stays dependency-free.
+    # Integration test for the opt-in crystal-sqlite3-backed driver, which
+    # links against libsqlite3. Kept separate so the default suite stays
+    # dependency-free.
     runs-on: ubuntu-latest
     container:
       image: crystallang/crystal:1.12.2
@@ -27,12 +28,14 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install SQLite
         run: apt-get update && apt-get install -y libsqlite3-dev
+      - name: Install shards
+        run: shards install
       - name: Run SQLite driver spec
         run: crystal spec spec/drivers/sqlite_driver.cr
 
   postgres:
-    # Integration test for the pure-Crystal Postgres wire driver against a real
-    # PostgreSQL server (SCRAM-SHA-256 auth + extended query protocol).
+    # Integration test for the crystal-pg-backed Postgres driver against a real
+    # PostgreSQL server.
     runs-on: ubuntu-latest
     container:
       image: crystallang/crystal:1.12.2
@@ -50,6 +53,8 @@ jobs:
           --health-retries 5
     steps:
       - uses: actions/checkout@v4
+      - name: Install shards
+        run: shards install
       - name: Run Postgres driver spec
         env:
           APTORK_TEST_POSTGRES_URL: postgres://aptork:secret@postgres:5432/aptork_test

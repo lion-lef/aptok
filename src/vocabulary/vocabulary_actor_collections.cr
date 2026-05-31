@@ -8,6 +8,9 @@ module Aptork
       getter committed_by : String?
       getter committed : String?
       getter description : String?
+      getter files_added : Array(String)
+      getter files_modified : Array(String)
+      getter files_removed : Array(String)
 
       def self.from_json_ld(value : JSON::Any) : Commit
         from_json_ld(json_object(value))
@@ -26,6 +29,9 @@ module Aptork
         @committed_by = self.class.string_property(json, "committedBy")
         @committed = self.class.string_property(json, "committed")
         @description = self.class.string_property(json, "description") || json["description"]?.try(&.as_h?).try { |description| description["content"]?.try(&.as_s?) }
+        @files_added = self.class.string_array_property(json, "filesAdded")
+        @files_modified = self.class.string_array_property(json, "filesModified")
+        @files_removed = self.class.string_array_property(json, "filesRemoved")
       end
     end
   end

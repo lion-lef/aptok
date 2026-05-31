@@ -15,6 +15,9 @@ applications built on top of it.
 - **[ActivityStreams 2.0][as2]** — the vocabulary objects in `src/vocabulary/*`
   serialize to and parse from AS2 JSON-LD (`application/activity+json` and
   `application/ld+json; profile="…activitystreams"`).
+- **[ForgeFed][forgefed]** — repository, project, branch, commit, push, ticket,
+  merge request, ticket dependency, and access activity helpers with typed
+  parsing and optional strict validation.
 - **[WebFinger (RFC 7033)][webfinger]** — JRD server (`/.well-known/webfinger`)
   with handle/alias/link mapping, and a client lookup helper.
 - **[HTTP Signatures (draft-cavage-http-signatures)][cavage]** — signing and
@@ -32,7 +35,7 @@ applications built on top of it.
 | [FEP-8b32][fep-8b32] | Object Integrity Proofs | ✅ | `eddsa-jcs-2022` Ed25519 proofs (`create_object_proof`, `verify_object_proof?`). |
 | [FEP-521a][fep-521a] | Representing actor's public keys | ✅ | `Multikey` / `publicKeyMultibase` assertion methods (`Aptork.multikey`). |
 | [FEP-8fcf][fep-8fcf] | Followers collection synchronization | ✅ | `Collection-Synchronization` header generation during delivery. |
-| [FEP-0837][fep-0837] | Federated Marketplace | ✅ | Proposal/Intent/Commitment/Agreement builders and ValueFlows mapping. |
+| [FEP-0837][fep-0837] | Federated Marketplace | ✅ | Proposal/Intent/Commitment/Agreement builders, ValueFlows mapping, and optional strict validators. |
 | [FEP-044f][fep-044f] | Surface-level federation interop hints | 🟡 | `@context` term registered; no dedicated behavior yet. |
 | LD Signatures (RsaSignature2017) | — | ❌ | Only the newer Data Integrity proofs are implemented. |
 
@@ -65,6 +68,7 @@ applications built on top of it.
 [fep-0837]: https://codeberg.org/fediverse/fep/src/branch/main/fep/0837/fep-0837.md
 [fep-044f]: https://codeberg.org/fediverse/fep/src/branch/main/fep/044f/fep-044f.md
 [fedify]: https://github.com/fedify-dev/fedify
+[forgefed]: https://forgefed.org/spec/
 [activitypub]: https://www.w3.org/TR/activitypub/
 [as2]: https://www.w3.org/TR/activitystreams-core/
 [webfinger]: https://datatracker.ietf.org/doc/html/rfc7033

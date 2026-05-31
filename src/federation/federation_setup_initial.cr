@@ -143,17 +143,18 @@ module Aptork
     end
 
     def set_object_dispatcher(type : String, path : String, dispatcher : ObjectDispatcher) : self
-      validate_path!(path)
       param_dispatcher = ->(ctx : Context, params : Hash(String, String)) do
         identifier = params["identifier"]? || params.values.first? || ""
         dispatcher.call(ctx, identifier)
       end
-      @object_routes.reject! { |route| route.type == type && route.path == path }
-      @object_routes << ObjectRoute.new(type, path, param_dispatcher)
-      self
+      set_object_route(type, path, param_dispatcher)
     end
 
     def set_object_dispatcher(type : String, path : String, dispatcher : ParamObjectDispatcher) : self
+      set_object_route(type, path, dispatcher)
+    end
+
+    private def set_object_route(type : String, path : String, dispatcher : ParamObjectDispatcher) : self
       validate_path!(path)
       @object_routes.reject! { |route| route.type == type && route.path == path }
       @object_routes << ObjectRoute.new(type, path, dispatcher)
@@ -179,25 +180,19 @@ module Aptork
     end
 
     def set_followers_dispatcher(path : String, dispatcher : CollectionDispatcher) : self
-      validate_identifier_route!(path, "followers")
-      set_ordered_collection_dispatcher("followers", path, dispatcher)
+      set_builtin_collection_dispatcher("followers", path, dispatcher)
       @followers_path = path
       self
     end
 
     def set_followers_dispatcher(path : String, dispatcher : CursorCollectionDispatcher) : self
-      validate_identifier_route!(path, "followers")
-      param_dispatcher = ->(ctx : Context, params : Hash(String, String), cursor : String?, size : Int32) do
-        dispatcher.call(ctx, params["identifier"]? || "", cursor, size)
-      end
-      set_ordered_collection_page_dispatcher("followers", path, param_dispatcher)
+      set_builtin_collection_dispatcher("followers", path, dispatcher)
       @followers_path = path
       self
     end
 
     def set_followers_dispatcher(path : String, dispatcher : ParamCursorCollectionDispatcher) : self
-      validate_identifier_route!(path, "followers")
-      set_ordered_collection_page_dispatcher("followers", path, dispatcher)
+      set_builtin_collection_dispatcher("followers", path, dispatcher)
       @followers_path = path
       self
     end
@@ -212,74 +207,42 @@ module Aptork
       self
     end
 
-    def set_following_dispatcher(path : String, dispatcher : CollectionDispatcher) : self
-      validate_identifier_route!(path, "following")
-      set_ordered_collection_dispatcher("following", path, dispatcher)
-      @following_path = path
-      self
+    {% for item in [
+                     {method: "following", name: "following", ivar: "following_path"},
+                     {method: "liked", name: "liked", ivar: "liked_path"},
+                     {method: "featured", name: "featured", ivar: "featured_path"},
+                     {method: "featured_tags", name: "featured_tags", ivar: "featured_tags_path"},
+                   ] %}
+      def set_{{item[:method].id}}_dispatcher(path : String, dispatcher : CollectionDispatcher) : self
+        set_builtin_collection_dispatcher({{item[:name]}}, path, dispatcher)
+        @{{item[:ivar].id}} = path
+        self
+      end
+
+      def set_{{item[:method].id}}_dispatcher(path : String, dispatcher : CursorCollectionDispatcher) : self
+        set_builtin_collection_dispatcher({{item[:name]}}, path, dispatcher)
+        @{{item[:ivar].id}} = path
+        self
+      end
+
+      def set_{{item[:method].id}}_dispatcher(path : String, dispatcher : ParamCursorCollectionDispatcher) : self
+        set_builtin_collection_dispatcher({{item[:name]}}, path, dispatcher)
+        @{{item[:ivar].id}} = path
+        self
+      end
+    {% end %}
+
+    private def set_builtin_collection_dispatcher(name : String, path : String, dispatcher : CollectionDispatcher) : self
+      validate_identifier_route!(path, name)
+      set_ordered_collection_dispatcher(name, path, dispatcher)
     end
 
-    def set_following_dispatcher(path : String, dispatcher : CursorCollectionDispatcher) : self
-      set_builtin_cursor_collection_dispatcher("following", path, dispatcher)
-      @following_path = path
-      self
+    private def set_builtin_collection_dispatcher(name : String, path : String, dispatcher : CursorCollectionDispatcher) : self
+      set_builtin_cursor_collection_dispatcher(name, path, dispatcher)
     end
 
-    def set_following_dispatcher(path : String, dispatcher : ParamCursorCollectionDispatcher) : self
-      set_builtin_cursor_collection_dispatcher("following", path, dispatcher)
-      @following_path = path
-      self
-    end
-
-    def set_liked_dispatcher(path : String, dispatcher : CollectionDispatcher) : self
-      validate_identifier_route!(path, "liked")
-      set_ordered_collection_dispatcher("liked", path, dispatcher)
-      @liked_path = path
-      self
-    end
-
-    def set_liked_dispatcher(path : String, dispatcher : CursorCollectionDispatcher) : self
-      set_builtin_cursor_collection_dispatcher("liked", path, dispatcher)
-      @liked_path = path
-      self
-    end
-
-    def set_liked_dispatcher(path : String, dispatcher : ParamCursorCollectionDispatcher) : self
-      set_builtin_cursor_collection_dispatcher("liked", path, dispatcher)
-      @liked_path = path
-      self
-    end
-
-    def set_featured_dispatcher(path : String, dispatcher : CollectionDispatcher) : self
-      validate_identifier_route!(path, "featured")
-      set_ordered_collection_dispatcher("featured", path, dispatcher)
-      @featured_path = path
-      self
-    end
-
-    def set_featured_dispatcher(path : String, dispatcher : CursorCollectionDispatcher) : self
-      set_builtin_cursor_collection_dispatcher("featured", path, dispatcher)
-      @featured_path = path
-      self
-    end
-
-    def set_featured_dispatcher(path : String, dispatcher : ParamCursorCollectionDispatcher) : self
-      set_builtin_cursor_collection_dispatcher("featured", path, dispatcher)
-      @featured_path = path
-      self
-    end
-
-    def set_featured_tags_dispatcher(path : String, dispatcher : CollectionDispatcher) : self
-      validate_identifier_route!(path, "featured_tags")
-      set_ordered_collection_dispatcher("featured_tags", path, dispatcher)
-      @featured_tags_path = path
-      self
-    end
-
-    def set_featured_tags_dispatcher(path : String, dispatcher : CursorCollectionDispatcher) : self
-      set_builtin_cursor_collection_dispatcher("featured_tags", path, dispatcher)
-      @featured_tags_path = path
-      self
+    private def set_builtin_collection_dispatcher(name : String, path : String, dispatcher : ParamCursorCollectionDispatcher) : self
+      set_builtin_cursor_collection_dispatcher(name, path, dispatcher)
     end
   end
 end

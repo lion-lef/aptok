@@ -600,7 +600,7 @@ describe Aptork::Federation do
     outbox_handled = false
 
     federation = Aptork.federation("https://local.example") do
-      actor "/users/{identifier}", ->(ctx : Aptork::Context, identifier : String) do
+      actor "/users/{identifier}" do |ctx, identifier|
         Aptork.actor(
           "Person",
           ctx.get_actor_uri(identifier),
@@ -614,17 +614,17 @@ describe Aptork::Federation do
         [Aptork.note("#{ctx.get_actor_uri(identifier)}/notes/1", "Hello")]
       end
 
-      object "Note", "/users/{identifier}/notes/{note_id}", ->(ctx : Aptork::Context, params : Hash(String, String)) do
+      object "Note", "/users/{identifier}/notes/{note_id}" do |ctx, params|
         Aptork.note(ctx.get_object_uri("Note", params), "Hello").as(Aptork::JsonMap?)
       end
 
       object "Note" do |note|
-        note.authorize(->(_ctx : Aptork::Context, _request : Aptork::Request, _verification : Aptork::VerificationResult, _identifier : String?, params : Hash(String, String)) do
+        note.authorize do |_ctx, _request, _verification, _identifier, params|
           params["identifier"]? == "alice"
-        end)
+        end
       end
 
-      collection_page "stars", "/users/{identifier}/stars", ->(_ctx : Aptork::Context, _params : Hash(String, String), cursor : String?, _size : Int32) do
+      collection_page "stars", "/users/{identifier}/stars" do |_ctx, _params, cursor, _size|
         if cursor
           Aptork::CollectionPageResult.new([Aptork.actor("Person", "https://remote.example/users/bob", "bob", "https://remote.example/users/bob/inbox", "https://remote.example/users/bob/outbox")]).as(Aptork::CollectionPageResult?)
         else
@@ -634,22 +634,22 @@ describe Aptork::Federation do
 
       collection "stars" do |stars|
         stars.item_type "Person"
-        stars.set_counter(->(_ctx : Aptork::Context, _params : Hash(String, String)) { 1.as(Int32?) })
+        stars.set_counter { |_ctx, _params| 1.as(Int32?) }
       end
 
-      liked "/users/{identifier}/liked", ->(_ctx : Aptork::Context, _identifier : String) do
+      liked "/users/{identifier}/liked" do |_ctx, _identifier|
         [] of Aptork::JsonMap
       end
 
       inbox "/users/{identifier}/inbox", "/inbox" do |routes|
-        routes.on "Create", ->(_ctx : Aptork::Context, _activity : Aptork::JsonMap) do
+        routes.on "Create" do |_ctx, _activity|
           inbox_handled = true
           nil
         end
       end
 
       outbox "/users/{identifier}/outbox" do |routes|
-        routes.on "Create", ->(_ctx : Aptork::Context, _activity : Aptork::JsonMap) do
+        routes.on "Create" do |_ctx, _activity|
           outbox_handled = true
           nil
         end
@@ -657,7 +657,7 @@ describe Aptork::Federation do
     end
 
     explicit = Aptork.federation("https://explicit.example") do |dsl|
-      dsl.actor "/users/{identifier}", ->(ctx : Aptork::Context, identifier : String) do
+      dsl.actor "/users/{identifier}" do |ctx, identifier|
         Aptork.actor(
           "Person",
           ctx.get_actor_uri(identifier),
@@ -690,10 +690,43 @@ describe Aptork::Federation do
     explicit.create_context.actor("alice").not_nil!["id"].as_s.should eq("https://explicit.example/users/alice")
   end
 
+  it "accepts block callbacks in the federation DSL" do
+    inbox_handled = false
+
+    federation = Aptork.federation("https://local.example") do
+      actor "/users/{identifier}" do |ctx, identifier|
+        Aptork.actor(
+          "Person",
+          ctx.get_actor_uri(identifier),
+          identifier,
+          ctx.get_inbox_uri(identifier),
+          ctx.get_outbox_uri(identifier)
+        ).as(Aptork::JsonMap?)
+      end
+
+      inbox "/users/{identifier}/inbox", "/inbox" do |routes|
+        routes.on "Create" do |_ctx, _activity|
+          inbox_handled = true
+        end
+      end
+    end
+
+    ctx = federation.create_context
+    activity = Aptork.create(
+      "https://remote.example/activities/1",
+      "https://remote.example/users/bob",
+      Aptork.note("https://remote.example/notes/1", "Hello")
+    )
+
+    ctx.actor("alice").not_nil!["id"].as_s.should eq("https://local.example/users/alice")
+    federation.handle(Aptork::Request.new("POST", "/users/alice/inbox", body: activity.to_json)).status.should eq(202)
+    inbox_handled.should be_true
+  end
+
   it "supports block-style federation building with runtime options" do
     queue = Aptork::InProcessMessageQueue.new
     federation = Aptork.federation("https://local.example", outbox_queue: queue) do
-      followers "/users/{identifier}/followers", ->(_ctx : Aptork::Context, _identifier : String) do
+      followers "/users/{identifier}/followers" do |_ctx, _identifier|
         [
           Aptork.actor(
             "Person",
@@ -814,7 +847,7 @@ describe Aptork::Federation do
     )
     federation = Aptork::Federation.create(origin)
     built = Aptork.federation(origin) do
-      actor "/users/{identifier}", ->(ctx : Aptork::Context, identifier : String) do
+      actor "/users/{identifier}" do |ctx, identifier|
         Aptork.actor(
           "Person",
           ctx.get_actor_uri(identifier),

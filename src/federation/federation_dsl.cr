@@ -5,9 +5,35 @@ module Aptork
     private alias DslBuiltinCollectionDispatcher = CollectionDispatcher | CursorCollectionDispatcher | ParamCursorCollectionDispatcher
     private alias DslFollowersDispatcher = DslBuiltinCollectionDispatcher | FilteredCursorCollectionDispatcher
 
+    private macro forward_block(method_name, block_type)
+      def {{method_name.id}}(&block : {{block_type.id}}) : self
+        {{method_name.id}}(block)
+      end
+    end
+
+    private macro forward_path_block(method_name, block_type)
+      def {{method_name.id}}(path : String, &block : {{block_type.id}}) : self
+        {{method_name.id}}(path, block)
+      end
+    end
+
+    private macro forward_type_path_block(method_name, block_type)
+      def {{method_name.id}}(type : String, path : String, &block : {{block_type.id}}) : self
+        {{method_name.id}}(type, path, block)
+      end
+    end
+
+    private macro forward_named_path_block(method_name, block_type)
+      def {{method_name.id}}(name : String, path : String, &block : {{block_type.id}}) : self
+        {{method_name.id}}(name, path, block)
+      end
+    end
+
     def actor(path : String, dispatcher : ActorDispatcher) : self
       set_actor_dispatcher(path, dispatcher)
     end
+
+    forward_path_block actor, ActorDispatcher
 
     def actor_alias(path : String, identifier : String) : self
       map_actor_alias(path, identifier)
@@ -16,6 +42,8 @@ module Aptork
     def object(type : String, path : String, dispatcher : DslObjectDispatcher) : self
       set_object_dispatcher(type, path, dispatcher)
     end
+
+    forward_type_path_block object, ParamObjectDispatcher
 
     def object(type : String) : ObjectCallbacks
       configure_object(type)
@@ -34,6 +62,8 @@ module Aptork
     def outbox_page(path : String, dispatcher : CursorCollectionDispatcher | NullableCursorCollectionDispatcher) : self
       set_outbox_page_dispatcher(path, dispatcher)
     end
+
+    forward_path_block outbox_page, NullableCursorCollectionDispatcher
 
     def outbox(path : String) : OutboxListeners
       set_outbox_listeners(path)
@@ -63,6 +93,8 @@ module Aptork
       set_followers_dispatcher(path, dispatcher)
     end
 
+    forward_path_block followers, CollectionDispatcher
+
     def following(path : String, dispatcher : DslBuiltinCollectionDispatcher) : self
       set_following_dispatcher(path, dispatcher)
     end
@@ -79,21 +111,33 @@ module Aptork
       set_featured_tags_dispatcher(path, dispatcher)
     end
 
+    {% for method_name in %w(following liked featured featured_tags) %}
+      forward_path_block {{method_name.id}}, CollectionDispatcher
+    {% end %}
+
     def collection(name : String, path : String, dispatcher : DslCollectionDispatcher) : self
       set_collection_dispatcher(name, path, dispatcher)
     end
+
+    forward_named_path_block collection, ParamCollectionDispatcher
 
     def collection_page(name : String, path : String, dispatcher : ParamCursorCollectionDispatcher) : self
       set_collection_page_dispatcher(name, path, dispatcher)
     end
 
+    forward_named_path_block collection_page, ParamCursorCollectionDispatcher
+
     def ordered_collection(name : String, path : String, dispatcher : DslCollectionDispatcher) : self
       set_ordered_collection_dispatcher(name, path, dispatcher)
     end
 
+    forward_named_path_block ordered_collection, ParamCollectionDispatcher
+
     def ordered_collection_page(name : String, path : String, dispatcher : ParamCursorCollectionDispatcher) : self
       set_ordered_collection_page_dispatcher(name, path, dispatcher)
     end
+
+    forward_named_path_block ordered_collection_page, ParamCursorCollectionDispatcher
 
     def collection(name : String) : CollectionCallbacks
       configure_collection(name)
@@ -109,33 +153,51 @@ module Aptork
       set_webfinger_dispatcher(dispatcher)
     end
 
+    forward_block webfinger, WebFingerDispatcher
+
     def webfinger_links(dispatcher : WebFingerLinksDispatcher) : self
       set_webfinger_links_dispatcher(dispatcher)
     end
+
+    forward_block webfinger_links, WebFingerLinksDispatcher
 
     def handles(mapper : HandleMapper) : self
       map_handle(mapper)
     end
 
+    forward_block handles, HandleMapper
+
     def aliases(mapper : Proc(Context, String, T)) : self forall T
       map_alias(mapper)
+    end
+
+    def aliases(&block : Proc(Context, String, T)) : self forall T
+      aliases(block)
     end
 
     def nodeinfo(dispatcher : NodeInfoDispatcher) : self
       set_nodeinfo_dispatcher(dispatcher)
     end
 
+    forward_block nodeinfo, NodeInfoDispatcher
+
     def nodeinfo(path : String, dispatcher : NodeInfoDispatcher) : self
       set_nodeinfo_dispatcher(path, dispatcher)
     end
+
+    forward_path_block nodeinfo, NodeInfoDispatcher
 
     def key_pairs(dispatcher : KeyPairsDispatcher) : self
       set_key_pairs_dispatcher(dispatcher)
     end
 
+    forward_block key_pairs, KeyPairsDispatcher
+
     def signature_keys(resolver : SignatureKeyResolver) : self
       set_signature_key_resolver(resolver)
     end
+
+    forward_block signature_keys, SignatureKeyResolver
   end
 
   def self.federation(origin : String, **options, &block) : Federation

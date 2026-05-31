@@ -54,7 +54,7 @@ accepting an explicit block argument when preferred:
 
 ```crystal
 federation = Aptork.federation("https://example.com") do
-  actor "/users/{identifier}", ->(ctx : Aptork::Context, identifier : String) do
+  actor "/users/{identifier}" do |ctx, identifier|
     Aptork.actor(
       "Person",
       ctx.get_actor_uri(identifier),
@@ -66,7 +66,7 @@ federation = Aptork.federation("https://example.com") do
 
   inbox "/users/{identifier}/inbox", "/inbox" do |routes|
     routes.with_idempotency
-    routes.on "Create", ->(_ctx : Aptork::Context, activity : Aptork::JsonMap) do
+    routes.on "Create" do |_ctx, activity|
       puts activity["id"]?
     end
   end

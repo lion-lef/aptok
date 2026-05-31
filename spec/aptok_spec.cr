@@ -1934,7 +1934,7 @@ describe Aptok::Federation do
       "USD"
     )
     documents = {
-      "https://forge.example/repos/aptok"   => repository,
+      "https://forge.example/repos/aptok"    => repository,
       "https://market.example/offers/solver" => offer,
     }
     federation = Aptok::Federation.create("https://local.example")

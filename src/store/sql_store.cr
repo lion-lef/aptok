@@ -1,6 +1,6 @@
 require "random/secure"
 
-module Aptork
+module Aptok
   # A value that can be bound to a SQL statement parameter or returned from a
   # query. Drivers return text/integer columns; `Nil` represents SQL `NULL`.
   alias SqlValue = String | Int32 | Int64 | Nil
@@ -17,12 +17,12 @@ module Aptork
   # calling the connection. Implementations only need to run an already
   # dialect-correct statement.
   #
-  # Two concrete adapters ship with Aptork:
+  # Two concrete adapters ship with Aptok:
   #
-  # - `Aptork::PostgresConnection`, backed by `will/crystal-pg`, available via
-  #   `require "aptork/store/postgres"`.
-  # - `Aptork::SqliteConnection`, backed by `crystal-lang/crystal-sqlite3`,
-  #   available via `require "aptork/store/sqlite"`.
+  # - `Aptok::PostgresConnection`, backed by `will/crystal-pg`, available via
+  #   `require "aptok/store/postgres"`.
+  # - `Aptok::SqliteConnection`, backed by `crystal-lang/crystal-sqlite3`,
+  #   available via `require "aptok/store/sqlite"`.
   module SqlConnection
     def dialect : SqlDialect
       SqlDialect::Sqlite
@@ -83,8 +83,8 @@ module Aptork
   # enforced lazily on read, plus atomically on compare-and-swap.
   #
   # ```
-  # conn = Aptork::SqliteConnection.open("federation.db")
-  # store = Aptork::SqlKvStore.new(conn)
+  # conn = Aptok::SqliteConnection.open("federation.db")
+  # store = Aptok::SqlKvStore.new(conn)
   # store.set("actor:alice", "{...}")
   # store.get("actor:alice")
   # ```
@@ -93,7 +93,7 @@ module Aptork
 
     @dialect : SqlDialect
 
-    def initialize(@connection : SqlConnection, dialect : SqlDialect? = nil, @table : String = "aptork_kv", migrate : Bool = true)
+    def initialize(@connection : SqlConnection, dialect : SqlDialect? = nil, @table : String = "aptok_kv", migrate : Bool = true)
       @dialect = dialect || @connection.dialect
       self.migrate if migrate
     end
@@ -101,7 +101,7 @@ module Aptork
     # Creates the backing table if it does not already exist.
     def migrate : Nil
       exec(<<-SQL)
-        /* aptork:kv_migrate */
+        /* aptok:kv_migrate */
         CREATE TABLE IF NOT EXISTS #{@table} (
           k TEXT PRIMARY KEY,
           v TEXT NOT NULL,
@@ -113,7 +113,7 @@ module Aptork
     def get(key : String) : String?
       now = now_ms
       rows = query(<<-SQL, [key.as(SqlValue)])
-        /* aptork:kv_get */
+        /* aptok:kv_get */
         SELECT v, expires_at FROM #{@table} WHERE k = ?
         SQL
       row = rows.first?
@@ -128,7 +128,7 @@ module Aptork
 
     def set(key : String, value : String, ttl : Time::Span? = nil) : Nil
       exec(<<-SQL, [key.as(SqlValue), value.as(SqlValue), expiry(ttl)])
-        /* aptork:kv_set */
+        /* aptok:kv_set */
         INSERT INTO #{@table} (k, v, expires_at) VALUES (?, ?, ?)
         ON CONFLICT (k) DO UPDATE SET v = excluded.v, expires_at = excluded.expires_at
         SQL
@@ -136,7 +136,7 @@ module Aptork
 
     def delete(key : String) : Nil
       exec(<<-SQL, [key.as(SqlValue)])
-        /* aptork:kv_delete */
+        /* aptok:kv_delete */
         DELETE FROM #{@table} WHERE k = ?
         SQL
     end
@@ -147,7 +147,7 @@ module Aptork
         # Insert only when absent, or overwrite an expired row — atomic in both
         # SQLite and Postgres via a conditional ON CONFLICT DO UPDATE.
         affected = exec(<<-SQL, [key.as(SqlValue), new_value.as(SqlValue), expiry(ttl), now.as(SqlValue)])
-          /* aptork:kv_cas_insert */
+          /* aptok:kv_cas_insert */
           INSERT INTO #{@table} (k, v, expires_at) VALUES (?, ?, ?)
           ON CONFLICT (k) DO UPDATE SET v = excluded.v, expires_at = excluded.expires_at
           WHERE #{@table}.expires_at IS NOT NULL AND #{@table}.expires_at <= ?
@@ -155,7 +155,7 @@ module Aptork
         affected > 0
       else
         affected = exec(<<-SQL, [new_value.as(SqlValue), expiry(ttl), key.as(SqlValue), expected_value.as(SqlValue), now.as(SqlValue)])
-          /* aptork:kv_cas_update */
+          /* aptok:kv_cas_update */
           UPDATE #{@table} SET v = ?, expires_at = ?
           WHERE k = ? AND v = ? AND (expires_at IS NULL OR expires_at > ?)
           SQL
@@ -168,12 +168,12 @@ module Aptork
       rows =
         if prefix
           query(<<-SQL, [like_prefix(prefix).as(SqlValue)])
-            /* aptork:kv_list_prefix */
+            /* aptok:kv_list_prefix */
             SELECT k, v, expires_at FROM #{@table} WHERE k LIKE ? ESCAPE '\\' ORDER BY k
             SQL
         else
           query(<<-SQL)
-            /* aptork:kv_list */
+            /* aptok:kv_list */
             SELECT k, v, expires_at FROM #{@table} ORDER BY k
             SQL
         end
@@ -235,14 +235,14 @@ module Aptork
 
     @dialect : SqlDialect
 
-    def initialize(@connection : SqlConnection, dialect : SqlDialect? = nil, @table : String = "aptork_queue", migrate : Bool = true)
+    def initialize(@connection : SqlConnection, dialect : SqlDialect? = nil, @table : String = "aptok_queue", migrate : Bool = true)
       @dialect = dialect || @connection.dialect
       self.migrate if migrate
     end
 
     def migrate : Nil
       exec(<<-SQL)
-        /* aptork:queue_migrate */
+        /* aptok:queue_migrate */
         CREATE TABLE IF NOT EXISTS #{@table} (
           id TEXT PRIMARY KEY,
           queue TEXT NOT NULL,
@@ -271,7 +271,7 @@ module Aptork
 
     def depth(queue : String) : Int32
       rows = query(<<-SQL, [queue.as(SqlValue)])
-        /* aptork:queue_depth */
+        /* aptok:queue_depth */
         SELECT COUNT(*) FROM #{@table} WHERE queue = ? AND dead = 0
         SQL
       (SqlStatements.to_i64?(rows.first?.try(&.[0]?)) || 0_i64).to_i
@@ -280,7 +280,7 @@ module Aptork
     def get_depth(queue : String, now : Time = Time.utc) : QueueDepth
       queued = depth(queue)
       rows = query(<<-SQL, [queue.as(SqlValue), now.to_unix_ms.as(SqlValue)])
-        /* aptork:queue_ready_count */
+        /* aptok:queue_ready_count */
         SELECT COUNT(*) FROM #{@table} WHERE queue = ? AND dead = 0 AND available_at <= ?
         SQL
       ready = (SqlStatements.to_i64?(rows.first?.try(&.[0]?)) || 0_i64).to_i
@@ -289,7 +289,7 @@ module Aptork
 
     def ready(queue : String, now : Time = Time.utc, limit : Int32 = 1) : Array(QueueMessage)
       rows = query(<<-SQL, [queue.as(SqlValue), now.to_unix_ms.as(SqlValue), limit.to_i64.as(SqlValue)])
-        /* aptork:queue_ready */
+        /* aptok:queue_ready */
         SELECT id, queue, payload, attempts, available_at, ordering_key
         FROM #{@table} WHERE queue = ? AND dead = 0 AND available_at <= ?
         ORDER BY available_at, id LIMIT ?
@@ -304,7 +304,7 @@ module Aptork
 
         id, message = candidate
         claimed = exec(<<-SQL, [id.as(SqlValue)])
-          /* aptork:queue_claim */
+          /* aptok:queue_claim */
           DELETE FROM #{@table} WHERE id = ?
           SQL
         # Another worker won the race for this row; try the next one.
@@ -347,7 +347,7 @@ module Aptork
     # Returns the dead-lettered messages for a queue (rows flagged `dead = 1`).
     def dead_messages(queue : String) : Array(QueueMessage)
       rows = query(<<-SQL, [queue.as(SqlValue)])
-        /* aptork:queue_dead */
+        /* aptok:queue_dead */
         SELECT id, queue, payload, attempts, available_at, ordering_key
         FROM #{@table} WHERE queue = ? AND dead = 1 ORDER BY available_at, id
         SQL
@@ -356,7 +356,7 @@ module Aptork
 
     private def next_ready(queue : String, now : Time) : Tuple(String, QueueMessage)?
       rows = query(<<-SQL, [queue.as(SqlValue), now.to_unix_ms.as(SqlValue)])
-        /* aptork:queue_next */
+        /* aptok:queue_next */
         SELECT id, queue, payload, attempts, available_at, ordering_key
         FROM #{@table} WHERE queue = ? AND dead = 0 AND available_at <= ?
         ORDER BY available_at, id LIMIT 1
@@ -382,7 +382,7 @@ module Aptork
         (dead ? 1_i64 : 0_i64).as(SqlValue),
       ]
       exec(<<-SQL, args)
-        /* aptork:queue_insert */
+        /* aptok:queue_insert */
         INSERT INTO #{@table} (id, queue, payload, attempts, available_at, ordering_key, dead)
         VALUES (?, ?, ?, ?, ?, ?, ?)
         SQL

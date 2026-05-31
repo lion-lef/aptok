@@ -14,7 +14,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Run spec-check hooks
         env:
-          APTORK_STRICT_FORMAT: "1"
+          APTOK_STRICT_FORMAT: "1"
         run: sh .meta/hooks/check-all.sh
 
   sqlite:
@@ -43,9 +43,9 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_USER: aptork
+          POSTGRES_USER: aptok
           POSTGRES_PASSWORD: secret
-          POSTGRES_DB: aptork_test
+          POSTGRES_DB: aptok_test
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -57,5 +57,5 @@ jobs:
         run: shards install
       - name: Run Postgres driver spec
         env:
-          APTORK_TEST_POSTGRES_URL: postgres://aptork:secret@postgres:5432/aptork_test
+          APTOK_TEST_POSTGRES_URL: postgres://aptok:secret@postgres:5432/aptok_test
         run: crystal spec spec/drivers/postgres_driver.cr

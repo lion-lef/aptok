@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   def self.cursor_collection_page(
     id : String,
     part_of : String,

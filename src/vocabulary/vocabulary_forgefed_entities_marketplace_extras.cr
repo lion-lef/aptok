@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   module Vocab
     class Intent < MarketplaceObject
       getter action : String?
@@ -217,7 +217,7 @@ module Aptork
       properties["@context"] = json([ACTIVITYSTREAMS_CONTEXT, FEP_EF61_CONTEXT])
       properties["gateways"] = json(gateways)
     end
-    Aptork.object(type, id, properties)
+    Aptok.object(type, id, properties)
   end
 
   def self.public_key(id : String, owner : String, public_key_pem : String) : JsonMap
@@ -253,6 +253,6 @@ module Aptork
     }
     properties["name"] = json(name) if name
     properties["attributedTo"] = json(attributed_to) if attributed_to
-    Aptork.object("Note", id, properties)
+    Aptok.object("Note", id, properties)
   end
 end

@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   class Context
     def send_activity(
       sender : NamedTuple(username: String),
@@ -253,7 +253,7 @@ module Aptork
       activity : JsonMap,
       options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
-      recipient = Aptork.recipient_from_actor(actor, options.prefer_shared_inbox)
+      recipient = Aptok.recipient_from_actor(actor, options.prefer_shared_inbox)
       recipients = recipient ? [recipient] : [] of Recipient
       forward_activity(forwarder_identifier, recipients, activity, options)
     end

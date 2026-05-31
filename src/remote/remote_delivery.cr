@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   module Remote
     def self.activitypub_document_content_type?(value : String?) : Bool
       return false unless value
@@ -211,7 +211,7 @@ module Aptork
     end
 
     private def self.remote_document_cache_value(document : RemoteDocument) : String
-      Aptork.json({
+      Aptok.json({
         "url"         => document.url,
         "contentType" => document.content_type,
         "status"      => document.status,

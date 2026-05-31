@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   def self.standard_object(
     type : String,
     id : String,
@@ -34,7 +34,7 @@ module Aptork
       source["mediaType"] = json(source_media_type) if source_media_type
       properties["source"] = json(source)
     end
-    Aptork.object(type, id, properties)
+    Aptok.object(type, id, properties)
   end
 
   macro standard_object_builder(method_name, type_name)
@@ -104,7 +104,7 @@ module Aptork
     properties["hreflang"] = json(hreflang) if hreflang
     properties["height"] = json(height) if height
     properties["width"] = json(width) if width
-    Aptork.object(type, nil, properties)
+    Aptok.object(type, nil, properties)
   end
 
   def self.mention(href : String, name : String? = nil) : JsonMap
@@ -116,18 +116,18 @@ module Aptork
       "name" => json(name),
     }
     properties["href"] = json(href) if href
-    Aptork.object("Hashtag", nil, properties)
+    Aptok.object("Hashtag", nil, properties)
   end
 
   def self.property_value(name : String, value : String) : JsonMap
-    Aptork.object("PropertyValue", nil, JsonMap{
+    Aptok.object("PropertyValue", nil, JsonMap{
       "name"  => json(name),
       "value" => json(value),
     })
   end
 
   def self.emoji(id : String, name : String, icon : JsonMap | String) : JsonMap
-    Aptork.object("Emoji", id, JsonMap{
+    Aptok.object("Emoji", id, JsonMap{
       "name" => json(name),
       "icon" => json(icon),
     })
@@ -137,7 +137,7 @@ module Aptork
     properties = JsonMap.new
     properties["formerType"] = json(former_type) if former_type
     properties["deleted"] = json(deleted) if deleted
-    Aptork.object("Tombstone", id, properties)
+    Aptok.object("Tombstone", id, properties)
   end
 
   def self.activity(
@@ -155,7 +155,7 @@ module Aptork
       "published" => json(now),
     }
     properties["target"] = json(target) if target
-    Aptork.object(type, id, properties)
+    Aptok.object(type, id, properties)
   end
 
   def self.intransitive_activity(
@@ -173,7 +173,7 @@ module Aptork
     }
     properties["target"] = json(target) if target
     properties["origin"] = json(origin) if origin
-    Aptork.object(type, id, properties)
+    Aptok.object(type, id, properties)
   end
 
   def self.create(id : String, actor : String, object : JsonMap | String, to : Array(String) = [PUBLIC_COLLECTION], target : String? = nil) : JsonMap
@@ -237,13 +237,13 @@ module Aptork
     properties["anyOf"] = json(any_of) unless any_of.empty?
     properties["endTime"] = json(end_time) if end_time
     properties["closed"] = json(closed) unless closed.nil?
-    Aptork.object("Question", id, properties)
+    Aptok.object("Question", id, properties)
   end
 
   def self.forgefed_object(type : String, id : String, properties : JsonMap = JsonMap.new) : JsonMap
     properties = properties.dup
     properties["@context"] = json([ACTIVITYSTREAMS_CONTEXT, FORGEFED_CONTEXT])
-    Aptork.object(type, id, properties)
+    Aptok.object(type, id, properties)
   end
 
   def self.forgefed_repository(

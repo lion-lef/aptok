@@ -2,7 +2,7 @@ require "socket"
 require "uri"
 require "random/secure"
 
-module Aptork
+module Aptok
   alias RedisReply = String | Int64 | Array(String) | Nil
 
   module RedisCommandClient
@@ -109,10 +109,10 @@ module Aptork
       return 1
       LUA
 
-    def initialize(@client : RedisCommandClient, @prefix : String = "aptork")
+    def initialize(@client : RedisCommandClient, @prefix : String = "aptok")
     end
 
-    def self.from_url(url : String, prefix : String = "aptork") : self
+    def self.from_url(url : String, prefix : String = "aptok") : self
       new(RedisProtocolClient.from_url(url), prefix)
     end
 
@@ -171,10 +171,10 @@ module Aptork
   class RedisMessageQueue
     include MessageQueue
 
-    def initialize(@client : RedisCommandClient, @prefix : String = "aptork")
+    def initialize(@client : RedisCommandClient, @prefix : String = "aptok")
     end
 
-    def self.from_url(url : String, prefix : String = "aptork") : self
+    def self.from_url(url : String, prefix : String = "aptok") : self
       new(RedisProtocolClient.from_url(url), prefix)
     end
 
@@ -266,13 +266,13 @@ module Aptork
 
     private def encode_message(message : QueueMessage) : String
       JsonMap{
-        "id"           => Aptork.json(Random::Secure.hex(12)),
-        "queue"        => Aptork.json(message.queue),
-        "payload"      => Aptork.json(message.payload),
-        "attempts"     => Aptork.json(message.attempts),
-        "available_at" => Aptork.json(message.available_at.to_unix_ms),
+        "id"           => Aptok.json(Random::Secure.hex(12)),
+        "queue"        => Aptok.json(message.queue),
+        "payload"      => Aptok.json(message.payload),
+        "attempts"     => Aptok.json(message.attempts),
+        "available_at" => Aptok.json(message.available_at.to_unix_ms),
       }.tap do |json|
-        json["ordering_key"] = Aptork.json(message.ordering_key) if message.ordering_key
+        json["ordering_key"] = Aptok.json(message.ordering_key) if message.ordering_key
       end.to_json
     end
   end

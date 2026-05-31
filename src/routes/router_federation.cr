@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   class Router
     private def outbox_activity_response(result : RouteOutboxActivityResult) : Response
       case result
@@ -52,7 +52,7 @@ module Aptork
     end
 
     private def activity_type_name?(type : String) : Bool
-      name = Aptork.type_name(type)
+      name = Aptok.type_name(type)
       name == "Activity" || ACTIVITY_TYPES.includes?(name)
     end
 
@@ -61,7 +61,7 @@ module Aptork
       expected_actor_id = actor_document["id"]?.try(&.as_s?) || ctx.get_actor_uri(identifier)
       return false if actor_ids.empty?
 
-      actor_ids.all? { |actor_id| Aptork.same_resource_id?(actor_id, expected_actor_id) }
+      actor_ids.all? { |actor_id| Aptok.same_resource_id?(actor_id, expected_actor_id) }
     end
 
     private def activity_actor_id(activity : JsonMap) : String?
@@ -205,8 +205,8 @@ module Aptork
       return unless value
       if url = value.as_s?
         links << JsonMap{
-          "rel"  => Aptork.json("http://webfinger.net/rel/profile-page"),
-          "href" => Aptork.json(url),
+          "rel"  => Aptok.json("http://webfinger.net/rel/profile-page"),
+          "href" => Aptok.json(url),
         }
       elsif array = value.as_a?
         array.each { |item| append_url_links(links, item) }
@@ -216,8 +216,8 @@ module Aptork
         return unless href
 
         mapped = JsonMap{
-          "rel"  => Aptork.json(rel),
-          "href" => Aptork.json(href),
+          "rel"  => Aptok.json(rel),
+          "href" => Aptok.json(href),
         }
         media_type = link["type"]? || link["mediaType"]?
         mapped["type"] = media_type if media_type
@@ -235,8 +235,8 @@ module Aptork
         return unless href
 
         link = JsonMap{
-          "rel"  => Aptork.json("http://webfinger.net/rel/avatar"),
-          "href" => Aptork.json(href),
+          "rel"  => Aptok.json("http://webfinger.net/rel/avatar"),
+          "href" => Aptok.json(href),
         }
         if media_type = icon["mediaType"]? || icon["type"]?
           link["type"] = media_type
@@ -255,7 +255,7 @@ module Aptork
       return false unless value
 
       if type = value.as_s?
-        Aptork.type_name(type) == expected
+        Aptok.type_name(type) == expected
       elsif types = value.as_a?
         types.any? { |entry| type_matches?(entry, expected) }
       else
@@ -275,11 +275,11 @@ module Aptork
       if @federation.has_outbox_page_dispatcher?
         result = @federation.dispatch_outbox_page(ctx, identifier, cursor, size)
         return nil unless result
-        return cursor ? Aptork.cursor_ordered_collection_page(base, page_base, result.items, cursor, result.next_cursor, result.prev_cursor, size) : Aptork.cursor_ordered_collection(base, result.total_items, result.first_cursor || result.next_cursor, result.last_cursor, size, page_base)
+        return cursor ? Aptok.cursor_ordered_collection_page(base, page_base, result.items, cursor, result.next_cursor, result.prev_cursor, size) : Aptok.cursor_ordered_collection(base, result.total_items, result.first_cursor || result.next_cursor, result.last_cursor, size, page_base)
       end
 
       page = request.query["page"]?.try(&.to_i?)
-      Aptork.paginated_ordered_collection(ctx.get_outbox_uri(identifier), ctx.outbox(identifier), page, size)
+      Aptok.paginated_ordered_collection(ctx.get_outbox_uri(identifier), ctx.outbox(identifier), page, size)
     end
   end
 end

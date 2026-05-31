@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   class Federation
     def set_document_loader(loader : DocumentLoader) : self
       @document_loader = loader
@@ -45,21 +45,21 @@ module Aptork
       stop = worker.stop_channel
 
       if options.queues.includes?("outbox") && @outbox_queue && !worker.includes_queue?("outbox")
-        worker.add_queue("outbox", spawn(name: "aptork-outbox-queue") do
+        worker.add_queue("outbox", spawn(name: "aptok-outbox-queue") do
           queue_worker_loop(stop, options.poll_interval) do
             ctx.process_queued_activities(limit: options.limit)
           end
         end)
       end
       if options.queues.includes?("inbox") && @inbox_queue && !worker.includes_queue?("inbox")
-        worker.add_queue("inbox", spawn(name: "aptork-inbox-queue") do
+        worker.add_queue("inbox", spawn(name: "aptok-inbox-queue") do
           queue_worker_loop(stop, options.poll_interval) do
             ctx.process_queued_inbox_activities(limit: options.limit)
           end
         end)
       end
       if options.queues.includes?("fanout") && @fanout_queue && !worker.includes_queue?("fanout")
-        worker.add_queue("fanout", spawn(name: "aptork-fanout-queue") do
+        worker.add_queue("fanout", spawn(name: "aptok-fanout-queue") do
           queue_worker_loop(stop, options.poll_interval) do
             ctx.process_queued_fanout_activities(limit: options.limit)
           end
@@ -83,7 +83,7 @@ module Aptork
       start_queue(context_data)
     end
 
-    def enable_document_cache(ttl : Time::Span? = Time::Span.new(hours: 1), prefix : String = "aptork:remote-document") : self
+    def enable_document_cache(ttl : Time::Span? = Time::Span.new(hours: 1), prefix : String = "aptok:remote-document") : self
       @kv ||= MemoryKvStore.new
       @document_loader = Remote.cached_json_document_loader(
         @document_loader,

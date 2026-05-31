@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   class Federation
     private def snake_case_method_name(property : String) : String
       property == "featuredTags" ? "featured_tags" : property
@@ -24,14 +24,14 @@ module Aptork
 
       unless actor["publicKey"]?
         rsa_key = key_pairs.find { |key_pair| key_pair.algorithm.downcase == "rsa-sha256" }
-        actor["publicKey"] = Aptork.json(Aptork.public_key(rsa_key)) if rsa_key
+        actor["publicKey"] = Aptok.json(Aptok.public_key(rsa_key)) if rsa_key
       end
 
       if !actor["assertionMethod"]?
         assertion_methods = key_pairs
           .reject { |key_pair| key_pair.algorithm.downcase == "rsa-sha256" }
-          .map { |key_pair| Aptork.public_key(key_pair) }
-        actor["assertionMethod"] = Aptork.json(assertion_methods) unless assertion_methods.empty?
+          .map { |key_pair| Aptok.public_key(key_pair) }
+        actor["assertionMethod"] = Aptok.json(assertion_methods) unless assertion_methods.empty?
       end
 
       actor
@@ -41,7 +41,7 @@ module Aptork
       if object = actor.as_h?
         object["id"]? || actor
       elsif actors = actor.as_a?
-        Aptork.json(actors.map { |item| dehydrate_actor_value(item) })
+        Aptok.json(actors.map { |item| dehydrate_actor_value(item) })
       else
         actor
       end
@@ -67,9 +67,9 @@ module Aptork
 
     private def self.normalize_public_audience_value(value : JSON::Any) : JSON::Any
       if string = value.as_s?
-        public_audience_alias?(string) ? Aptork.json(PUBLIC_COLLECTION) : value
+        public_audience_alias?(string) ? Aptok.json(PUBLIC_COLLECTION) : value
       elsif array = value.as_a?
-        Aptork.json(array.map { |item| normalize_public_audience_value(item) })
+        Aptok.json(array.map { |item| normalize_public_audience_value(item) })
       elsif object = value.as_h?
         normalize_public_audience_values(object.as(JsonMap))
         value
@@ -85,7 +85,7 @@ module Aptork
     private def self.normalize_attachment_values(value : JsonMap) : Nil
       value.each do |key, item|
         if key == "attachment" && !item.as_a?
-          value[key] = Aptork.json([item])
+          value[key] = Aptok.json([item])
         else
           normalize_attachment_nested(item)
         end
@@ -130,7 +130,7 @@ module Aptork
     end
 
     private def same_uri_origin?(left : String, right : String) : Bool
-      Aptork.same_resource_origin?(left, right)
+      Aptok.same_resource_origin?(left, right)
     end
 
     private def processed_activity?(ctx : Context, activity : JsonMap) : Bool
@@ -161,7 +161,7 @@ module Aptork
       return unless id && !id.empty?
 
       key = strategy ? strategy.call(ctx, activity) : default_idempotency_key(ctx, id)
-      key ? "aptork:inbox:#{key}" : nil
+      key ? "aptok:inbox:#{key}" : nil
     end
 
     private def default_idempotency_key(ctx : Context, activity_id : String) : String

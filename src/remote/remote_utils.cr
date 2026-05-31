@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   module Remote
     private def self.key_pair_from_multikey(document : JsonMap, verification_method : String, owner : String?) : ActorKeyPair?
       key_id = document["id"]?.try(&.as_s?) || document["@id"]?.try(&.as_s?)
@@ -34,11 +34,11 @@ module Aptork
     end
 
     private def self.proof_key_cache_key(verification_method : String) : String
-      "aptork:public-key:#{verification_method}"
+      "aptok:public-key:#{verification_method}"
     end
 
     private def self.proof_key_cache_value(key_pair : ActorKeyPair) : String
-      Aptork.json({
+      Aptok.json({
         "id"           => key_pair.id,
         "owner"        => key_pair.owner,
         "publicKeyPem" => key_pair.public_key_pem,
@@ -84,7 +84,7 @@ module Aptork
       object_id = object["id"]?.try(&.as_s?) || object["@id"]?.try(&.as_s?)
       return true unless object_id
 
-      Aptork.same_resource_id?(requested_url, object_id) || Aptork.same_resource_origin?(requested_url, object_id)
+      Aptok.same_resource_id?(requested_url, object_id) || Aptok.same_resource_origin?(requested_url, object_id)
     end
 
     private def self.activitypub_content_type?(value : String) : Bool
@@ -122,12 +122,12 @@ module Aptork
            end
       return nil unless id
 
-      Aptork.resource_origin(id)
+      Aptok.resource_origin(id)
     end
 
     private def self.same_id?(expected_id : String, object : JsonMap) : Bool
       actual = object["id"]?.try(&.as_s?) || object["@id"]?.try(&.as_s?)
-      !!actual && Aptork.same_resource_id?(expected_id, actual)
+      !!actual && Aptok.same_resource_id?(expected_id, actual)
     end
   end
 

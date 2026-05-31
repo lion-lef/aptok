@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   class InboxListeners
     def initialize(@federation : Federation)
     end
@@ -63,6 +63,10 @@ module Aptork
       self
     end
 
+    def with_idempotency(ttl : Time::Span, &block : InboxIdempotencyStrategy) : self
+      with_idempotency(ttl, block)
+    end
+
     def on_unverified_activity(listener : UnverifiedActivityListener) : self
       @federation.on_unverified_activity(listener)
       self
@@ -77,9 +81,15 @@ module Aptork
 
     forward_block on_error, InboxErrorHandler
 
-    def set_shared_key_dispatcher(dispatcher : SharedInboxKeyDispatcher) : self
+    def shared_key(dispatcher : SharedInboxKeyDispatcher) : self
       @federation.set_shared_key_dispatcher(dispatcher)
       self
+    end
+
+    forward_block shared_key, SharedInboxKeyDispatcher
+
+    def set_shared_key_dispatcher(dispatcher : SharedInboxKeyDispatcher) : self
+      shared_key(dispatcher)
     end
 
     forward_block set_shared_key_dispatcher, SharedInboxKeyDispatcher
@@ -164,23 +174,41 @@ module Aptork
       self
     end
 
-    def set_first_cursor(callback : CollectionCursorCallback) : self
+    def first_cursor(callback : CollectionCursorCallback) : self
       @federation.set_collection_first_cursor(@name, callback)
       self
+    end
+
+    forward_block first_cursor, CollectionCursorCallback
+
+    def last_cursor(callback : CollectionCursorCallback) : self
+      @federation.set_collection_last_cursor(@name, callback)
+      self
+    end
+
+    forward_block last_cursor, CollectionCursorCallback
+
+    def counter(callback : CollectionCounterCallback) : self
+      @federation.set_collection_counter(@name, callback)
+      self
+    end
+
+    forward_block counter, CollectionCounterCallback
+
+    def set_first_cursor(callback : CollectionCursorCallback) : self
+      first_cursor(callback)
     end
 
     forward_block set_first_cursor, CollectionCursorCallback
 
     def set_last_cursor(callback : CollectionCursorCallback) : self
-      @federation.set_collection_last_cursor(@name, callback)
-      self
+      last_cursor(callback)
     end
 
     forward_block set_last_cursor, CollectionCursorCallback
 
     def set_counter(callback : CollectionCounterCallback) : self
-      @federation.set_collection_counter(@name, callback)
-      self
+      counter(callback)
     end
 
     forward_block set_counter, CollectionCounterCallback

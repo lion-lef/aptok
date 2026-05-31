@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   def self.marketplace_context : JSON::Any
     json([
       ACTIVITYSTREAMS_CONTEXT,

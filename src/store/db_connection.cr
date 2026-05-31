@@ -1,6 +1,6 @@
 require "db"
 
-module Aptork
+module Aptok
   # Adapter from Crystal's `DB::Database` API to the narrow SQL surface used by
   # `SqlKvStore` and `SqlMessageQueue`.
   class DbConnection

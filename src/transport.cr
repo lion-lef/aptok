@@ -7,7 +7,7 @@ require "set"
 require "./vocabulary/vocabulary"
 require "./signatures/signatures"
 
-module Aptork
+module Aptok
   # Generic payload for content to publish into ActivityPub objects.
   record PublishRequest,
     title : String,
@@ -61,7 +61,7 @@ module Aptork
 
     def build_create_activity(req : PublishRequest, delivery : DeliveryConfig) : JsonMap
       object = build_task_object(req, delivery)
-      Aptork.create(
+      Aptok.create(
         "#{delivery.actor}/activities/create-#{Random::Secure.hex(10)}",
         delivery.actor,
         object,
@@ -72,14 +72,14 @@ module Aptork
 
     def build_forgefed_ticket_create(req : PublishRequest, delivery : DeliveryConfig) : JsonMap
       suffix = Random::Secure.hex(10)
-      ticket = Aptork.forgefed_ticket(
+      ticket = Aptok.forgefed_ticket(
         "#{delivery.actor}/tickets/#{suffix}",
         req.title,
         req.content,
         req.assignee,
         req.attributed_to
       )
-      Aptork.create(
+      Aptok.create(
         "#{delivery.actor}/activities/create-ticket-#{suffix}",
         delivery.actor,
         ticket,
@@ -94,7 +94,7 @@ module Aptork
       if target = delivery.target
         recipients << target unless target.empty?
       end
-      Aptork.marketplace_offer(
+      Aptok.marketplace_offer(
         "#{delivery.actor}/offers/#{suffix}",
         delivery.actor,
         req.item,
@@ -218,14 +218,14 @@ module Aptork
 
     private def build_task_object(req : PublishRequest, delivery : DeliveryConfig) : JsonMap
       properties = JsonMap{
-        "name"      => Aptork.json(req.title),
-        "content"   => Aptork.json(req.content),
-        "published" => Aptork.json(Aptork.now),
-        "to"        => Aptork.json(activity_recipients(delivery, req)),
+        "name"      => Aptok.json(req.title),
+        "content"   => Aptok.json(req.content),
+        "published" => Aptok.json(Aptok.now),
+        "to"        => Aptok.json(activity_recipients(delivery, req)),
       }
-      properties["attributedTo"] = Aptork.json(req.attributed_to) if req.attributed_to
-      properties["assignee"] = Aptork.json(req.assignee) if req.assignee
-      Aptork.object(@object_type, "#{delivery.actor}/objects/#{Random::Secure.hex(10)}", properties)
+      properties["attributedTo"] = Aptok.json(req.attributed_to) if req.attributed_to
+      properties["assignee"] = Aptok.json(req.assignee) if req.assignee
+      Aptok.object(@object_type, "#{delivery.actor}/objects/#{Random::Secure.hex(10)}", properties)
     end
 
     private def activity_recipients(delivery : DeliveryConfig, req : PublishRequest) : Array(String)

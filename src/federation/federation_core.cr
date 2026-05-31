@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   class Federation
     getter origin : String
     getter canonical_origin : String

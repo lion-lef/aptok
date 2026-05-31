@@ -1,5 +1,5 @@
 #!/bin/sh
-# Build check: ensures the Aptork library compiles cleanly.
+# Build check: ensures the Aptok library compiles cleanly.
 #
 # A green build is the most basic guarantee that the spec (the public API the
 # tests exercise) is self-consistent. We compile the entry point without
@@ -13,4 +13,4 @@ require_cmd crystal "Install Crystal: https://crystal-lang.org/install/" || exit
 # `build --no-codegen` type-checks the whole program without emitting a binary,
 # which is faster than a full build and enough to catch compile errors.
 run_step "crystal build (type check)" \
-  crystal build src/aptork.cr --no-codegen
+  crystal build src/aptok.cr --no-codegen

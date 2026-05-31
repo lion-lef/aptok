@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   class Federation
     def set_collection_dispatcher(name : String, path : String, dispatcher : CollectionDispatcher) : self
       set_array_collection_dispatcher(name, path, identifier_collection_dispatcher(dispatcher), ordered: false)
@@ -249,7 +249,7 @@ module Aptork
       ->(ctx : Context, _transform : ActivityTransformContext, activity : JsonMap) do
         unless activity.has_key?("id") || activity.has_key?("@id")
           type = activity["type"]?.try(&.as_s?) || "Activity"
-          activity["id"] = Aptork.json("#{ctx.origin}/##{type}/#{Random::Secure.hex(16)}")
+          activity["id"] = Aptok.json("#{ctx.origin}/##{type}/#{Random::Secure.hex(16)}")
         end
         activity
       end

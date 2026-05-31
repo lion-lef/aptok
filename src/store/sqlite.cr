@@ -1,23 +1,23 @@
-require "../aptork"
+require "../aptok"
 require "sqlite3"
 require "uri"
 require "./db_connection"
 
-module Aptork
+module Aptok
   # A `SqlConnection` backed by `crystal-lang/crystal-sqlite3` through
   # Crystal's `DB` API.
   #
-  # This driver is **not** required by `require "aptork"`, because it links
+  # This driver is **not** required by `require "aptok"`, because it links
   # against SQLite at compile time. Pull it in explicitly when you want
   # SQLite-backed storage.
   #
   # ```
-  # require "aptork"
-  # require "aptork/store/sqlite"
+  # require "aptok"
+  # require "aptok/store/sqlite"
   #
-  # conn = Aptork::SqliteConnection.open("federation.db")
-  # store = Aptork::SqlKvStore.new(conn)
-  # queue = Aptork::SqlMessageQueue.new(conn)
+  # conn = Aptok::SqliteConnection.open("federation.db")
+  # store = Aptok::SqlKvStore.new(conn)
+  # queue = Aptok::SqlMessageQueue.new(conn)
   # ```
   #
   # Build with the system SQLite library available, e.g. `apt-get install

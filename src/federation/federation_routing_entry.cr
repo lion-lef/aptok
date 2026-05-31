@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   class Federation
     def transform_activity(ctx : Context, transform_context : ActivityTransformContext, activity : JsonMap) : JsonMap
       @activity_transformers.reduce(activity) do |current, transformer|
@@ -202,28 +202,28 @@ module Aptork
 
     def route_activity_result(ctx : Context, activity : JsonMap) : RouteActivityResult
       unless activity_actor_id(activity)
-        @telemetry.counter("aptork.inbox.activities", attributes: telemetry_attributes({"status" => "missing_actor"}))
+        @telemetry.counter("aptok.inbox.activities", attributes: telemetry_attributes({"status" => "missing_actor"}))
         return RouteActivityResult::MissingActor
       end
       if processed_activity?(ctx, activity)
-        @telemetry.counter("aptork.inbox.activities", attributes: telemetry_attributes({"status" => "duplicate"}))
+        @telemetry.counter("aptok.inbox.activities", attributes: telemetry_attributes({"status" => "duplicate"}))
         return RouteActivityResult::AlreadyProcessed
       end
 
       listeners = inbox_listeners_for(activity)
       if listeners.empty?
-        @telemetry.counter("aptork.inbox.activities", attributes: telemetry_attributes({"status" => "ignored"}))
+        @telemetry.counter("aptok.inbox.activities", attributes: telemetry_attributes({"status" => "ignored"}))
         return RouteActivityResult::UnsupportedActivity
       end
 
       failed = false
-      @telemetry.span("aptork.inbox.route", telemetry_attributes({"activity.type" => activity_type_names(activity).join(",")})) do
+      @telemetry.span("aptok.inbox.route", telemetry_attributes({"activity.type" => activity_type_names(activity).join(",")})) do
         listeners.each do |listener|
           begin
             listener.call(ctx, activity)
           rescue ex
             failed = true
-            @telemetry.counter("aptork.inbox.activities", attributes: telemetry_attributes({"status" => "error"}))
+            @telemetry.counter("aptok.inbox.activities", attributes: telemetry_attributes({"status" => "error"}))
             handle_inbox_listener_error(ctx, ex)
           end
         end
@@ -232,7 +232,7 @@ module Aptork
       if failed
         RouteActivityResult::Error
       else
-        @telemetry.counter("aptork.inbox.activities", attributes: telemetry_attributes({"status" => "processed"}))
+        @telemetry.counter("aptok.inbox.activities", attributes: telemetry_attributes({"status" => "processed"}))
         RouteActivityResult::Success
       end
     end
@@ -256,7 +256,7 @@ module Aptork
       )
       return nil unless fetched
       fetched_id = object_id(fetched)
-      return nil unless fetched_id && Aptork.same_resource_id?(fetched_id, activity_id)
+      return nil unless fetched_id && Aptok.same_resource_id?(fetched_id, activity_id)
 
       fetched_actor_id = activity_actor_id(fetched)
       return nil unless fetched_actor_id
@@ -272,19 +272,19 @@ module Aptork
     def route_outbox_activity_result(ctx : Context, activity : JsonMap) : RouteOutboxActivityResult
       listeners = outbox_listeners_for(activity)
       if listeners.empty?
-        @telemetry.counter("aptork.outbox.activities", attributes: telemetry_attributes({"status" => "ignored"}))
+        @telemetry.counter("aptok.outbox.activities", attributes: telemetry_attributes({"status" => "ignored"}))
         return RouteOutboxActivityResult::UnsupportedActivity
       end
 
       failed = false
       ctx.reset_delivered_activity
-      @telemetry.span("aptork.outbox.route", telemetry_attributes({"activity.type" => activity_type_names(activity).join(",")})) do
+      @telemetry.span("aptok.outbox.route", telemetry_attributes({"activity.type" => activity_type_names(activity).join(",")})) do
         listeners.each do |listener|
           begin
             listener.call(ctx, activity)
           rescue ex
             failed = true
-            @telemetry.counter("aptork.outbox.activities", attributes: telemetry_attributes({"status" => "error"}))
+            @telemetry.counter("aptok.outbox.activities", attributes: telemetry_attributes({"status" => "error"}))
             handle_outbox_listener_error(ctx, ex)
           end
         end
@@ -292,7 +292,7 @@ module Aptork
       return RouteOutboxActivityResult::Error if failed
 
       notify_undelivered_outbox_activity(ctx, activity) unless ctx.has_delivered_activity?
-      @telemetry.counter("aptork.outbox.activities", attributes: telemetry_attributes({"status" => "processed"}))
+      @telemetry.counter("aptok.outbox.activities", attributes: telemetry_attributes({"status" => "processed"}))
       RouteOutboxActivityResult::Success
     end
   end

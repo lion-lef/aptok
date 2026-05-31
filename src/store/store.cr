@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   record KvStoreEntry, key : String, value : String
 
   module KvStore

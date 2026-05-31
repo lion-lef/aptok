@@ -1,11 +1,11 @@
-module Aptork
+module Aptok
   module Signatures
     def self.verify_rsa_sha256?(request : Request, key_pair : ActorKeyPair) : Bool
       verify_rsa_sha256_with_pem?(request, key_pair.public_key_pem)
     end
 
     def self.verify_rsa_sha256_with_pem?(request : Request, public_key_pem : String) : Bool
-      keyfile = File.tempfile("aptork-public-key")
+      keyfile = File.tempfile("aptok-public-key")
       begin
         keyfile.print(public_key_pem)
         keyfile.flush
@@ -46,7 +46,7 @@ module Aptork
     end
 
     def self.sign_string_with_pem(data : String, key_pem : String) : String
-      keyfile = File.tempfile("aptork-private-key")
+      keyfile = File.tempfile("aptok-private-key")
       begin
         keyfile.print(key_pem)
         keyfile.flush
@@ -58,8 +58,8 @@ module Aptork
     end
 
     def self.sign_bytes_ed25519_with_pem(data : Bytes, private_key_pem : String) : String
-      keyfile = File.tempfile("aptork-private-key")
-      datafile = File.tempfile("aptork-ed25519-data")
+      keyfile = File.tempfile("aptok-private-key")
+      datafile = File.tempfile("aptok-ed25519-data")
       begin
         keyfile.print(private_key_pem)
         keyfile.flush
@@ -91,7 +91,7 @@ module Aptork
     end
 
     def self.verify_string_with_pem?(data : String, signature_b64 : String, public_key_pem : String) : Bool
-      keyfile = File.tempfile("aptork-public-key")
+      keyfile = File.tempfile("aptok-public-key")
       begin
         keyfile.print(public_key_pem)
         keyfile.flush
@@ -103,7 +103,7 @@ module Aptork
     end
 
     def self.canonical_json(value : JsonMap) : String
-      canonical_json(Aptork.json(value))
+      canonical_json(Aptok.json(value))
     end
 
     def self.canonical_json(value : JSON::Any) : String
@@ -112,14 +112,14 @@ module Aptork
 
     def self.object_proof_payload(object : JsonMap, proof : JsonMap) : String
       [
-        canonical_json_value(Aptork.json(object), skip_proof: true),
-        canonical_json_value(Aptork.json(proof_config(object, proof)), skip_proof: false),
+        canonical_json_value(Aptok.json(object), skip_proof: true),
+        canonical_json_value(Aptok.json(proof_config(object, proof)), skip_proof: false),
       ].join("\n")
     end
 
     def self.object_proof_hash_data(object : JsonMap, proof : JsonMap) : Bytes
-      document = canonical_json_value(Aptork.json(object), skip_proof: true)
-      config = canonical_json_value(Aptork.json(proof_config(object, proof)), skip_proof: false)
+      document = canonical_json_value(Aptok.json(object), skip_proof: true)
+      config = canonical_json_value(Aptok.json(proof_config(object, proof)), skip_proof: false)
       data = IO::Memory.new
       data.write(Digest::SHA256.digest(config).to_slice)
       data.write(Digest::SHA256.digest(document).to_slice)
@@ -133,11 +133,11 @@ module Aptork
 
       cryptosuite = object_proof_cryptosuite(key_pair, options)
       proof = JsonMap{
-        "type"               => Aptork.json(options.proof_type),
-        "cryptosuite"        => Aptork.json(cryptosuite),
-        "created"            => Aptork.json(options.created),
-        "verificationMethod" => Aptork.json(options.verification_method || key_pair.id),
-        "proofPurpose"       => Aptork.json(options.proof_purpose),
+        "type"               => Aptok.json(options.proof_type),
+        "cryptosuite"        => Aptok.json(cryptosuite),
+        "created"            => Aptok.json(options.created),
+        "verificationMethod" => Aptok.json(options.verification_method || key_pair.id),
+        "proofPurpose"       => Aptok.json(options.proof_purpose),
       }
       signature = case cryptosuite
                   when "eddsa-jcs-2022"
@@ -149,13 +149,13 @@ module Aptork
                   else
                     raise "unsupported object proof cryptosuite: #{cryptosuite}"
                   end
-      proof["proofValue"] = Aptork.json(signature)
+      proof["proofValue"] = Aptok.json(signature)
       proof
     end
 
     def self.attach_object_proof(object : JsonMap, key_pair : ActorKeyPair, options : ObjectProofOptions = ObjectProofOptions.new) : JsonMap
       signed = object.dup
-      signed["proof"] = Aptork.json(create_object_proof(object, key_pair, options))
+      signed["proof"] = Aptok.json(create_object_proof(object, key_pair, options))
       signed
     end
 

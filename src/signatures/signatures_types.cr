@@ -4,7 +4,7 @@ require "uri"
 require "../http/http"
 require "../vocabulary/vocabulary"
 
-module Aptork
+module Aptok
   record ActorKeyPair,
     id : String,
     owner : String,
@@ -15,13 +15,13 @@ module Aptork
 
   def self.public_key(key_pair : ActorKeyPair) : JsonMap
     if key_pair.algorithm.downcase == "ed25519"
-      Aptork.multikey(
+      Aptok.multikey(
         key_pair.id,
         key_pair.owner,
         Signatures.ed25519_public_key_multibase(key_pair.public_key_pem)
       )
     else
-      Aptork.public_key(key_pair.id, key_pair.owner, key_pair.public_key_pem)
+      Aptok.public_key(key_pair.id, key_pair.owner, key_pair.public_key_pem)
     end
   end
 
@@ -68,7 +68,7 @@ module Aptork
     expires : Bool = false
 
   record ObjectProofOptions,
-    created : String = Aptork.now,
+    created : String = Aptok.now,
     verification_method : String? = nil,
     proof_purpose : String = "assertionMethod",
     proof_type : String = "DataIntegrityProof",

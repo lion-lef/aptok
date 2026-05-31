@@ -1,6 +1,6 @@
 require "json"
 
-module Aptork
+module Aptok
   class RedisMessageQueue
     private def decode_message(member : String) : QueueMessage?
       json = JSON.parse(member).as_h

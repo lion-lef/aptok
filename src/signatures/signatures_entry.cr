@@ -5,7 +5,7 @@ require "uri"
 require "../http/http"
 require "../vocabulary/vocabulary"
 
-module Aptork
+module Aptok
   module Signatures
     BASE58BTC_ALPHABET      = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
     ED25519_MULTIKEY_PREFIX = Bytes[0xed_u8, 0x01_u8]
@@ -232,7 +232,7 @@ module Aptork
     end
 
     def self.verify_rfc9421_rsa_sha256_with_pem?(request : Request, target_url : String?, public_key_pem : String, label : String? = nil, options : Rfc9421VerifyOptions = Rfc9421VerifyOptions.new) : Bool
-      keyfile = File.tempfile("aptork-public-key")
+      keyfile = File.tempfile("aptok-public-key")
       begin
         keyfile.print(public_key_pem)
         keyfile.flush

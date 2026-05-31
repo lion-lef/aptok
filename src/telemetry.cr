@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   alias TelemetryAttributes = Hash(String, String)
 
   # Base telemetry interface. The default implementation is a no-op so that the
@@ -33,8 +33,8 @@ module Aptork
   # [openmetrics]: https://github.com/OpenObservability/OpenMetrics
   #
   # ```
-  # telemetry = Aptork::MetricsTelemetry.new
-  # federation = Aptork::Federation.create("https://example.com", transport, telemetry: telemetry)
+  # telemetry = Aptok::MetricsTelemetry.new
+  # federation = Aptok::Federation.create("https://example.com", transport, telemetry: telemetry)
   # # ... handle some requests ...
   # puts telemetry.to_openmetrics
   # ```

@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   class Context
     getter federation : Federation
     getter origin : String
@@ -213,7 +213,7 @@ module Aptork
     end
 
     def parse_uri(uri : String) : ParsedUri?
-      if parsed_ap = Aptork.parse_ap_uri(uri) || Aptork.parse_compatible_ap_uri(uri)
+      if parsed_ap = Aptok.parse_ap_uri(uri) || Aptok.parse_compatible_ap_uri(uri)
         return nil unless @portable_authority == parsed_ap.authority
 
         return parsed_uri_from_path(parsed_ap.path.empty? ? "/" : parsed_ap.path)
@@ -283,7 +283,7 @@ module Aptork
     private def normalize_portable_authority(authority : String?) : String?
       return nil unless authority
 
-      parsed = Aptork.parse_ap_uri("#{AP_URI_PREFIX}#{authority}/")
+      parsed = Aptok.parse_ap_uri("#{AP_URI_PREFIX}#{authority}/")
       raise ArgumentError.new("portable authority must be a DID") unless parsed
       parsed.authority
     end

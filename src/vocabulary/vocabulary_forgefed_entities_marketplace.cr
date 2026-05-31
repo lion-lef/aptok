@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   module Vocab
     class MarketplaceObject < Object
       getter name : String?
@@ -8,7 +8,7 @@ module Aptork
       end
 
       def self.from_json_ld(value : JsonMap) : MarketplaceObject
-        type = string_property(value, "type").try { |value| Aptork.type_name(value) }
+        type = string_property(value, "type").try { |value| Aptok.type_name(value) }
         case type
         when "Offer"
           MarketplaceOffer.from_json_ld(value)

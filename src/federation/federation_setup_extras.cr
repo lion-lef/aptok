@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   class Federation
     def self.attachment_array_normalizer : ActivityTransformer
       ->(_ctx : Context, _transform : ActivityTransformContext, activity : JsonMap) do

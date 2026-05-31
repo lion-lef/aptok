@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   record Request,
     method : String,
     path : String,

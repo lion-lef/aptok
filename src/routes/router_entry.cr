@@ -5,7 +5,7 @@ require "../federation/federation"
 require "../discovery/discovery"
 require "../uri_template"
 
-module Aptork
+module Aptok
   ACTIVITYPUB_ACCEPT_TYPES = [
     "application/activity+json",
     "application/ld+json",
@@ -30,7 +30,7 @@ module Aptork
 
       if read_method && request.path == "/.well-known/nodeinfo"
         ctx = @federation.create_context(context_data: @options.context_data)
-        document = @federation.has_nodeinfo_dispatcher? ? Aptork.nodeinfo_well_known(ctx.get_nodeinfo_uri) : Aptork.json({"links" => [] of Hash(String, String)}).as_h
+        document = @federation.has_nodeinfo_dispatcher? ? Aptok.nodeinfo_well_known(ctx.get_nodeinfo_uri) : Aptok.json({"links" => [] of Hash(String, String)}).as_h
         response = json_response(document, "application/jrd+json")
         return head ? head_response(response) : response
       end
@@ -105,7 +105,7 @@ module Aptork
       actor_id = actor["id"]?.try(&.as_s?) || ctx.get_actor_uri(identifier)
       links = automatic_webfinger_links(actor) + @federation.dispatch_webfinger_links(ctx, resource)
       aliases = webfinger_aliases(resource, actor, actor_id)
-      webfinger_response(Aptork.webfinger_jrd(webfinger_subject(resource, actor), actor_id, aliases: aliases, links: links))
+      webfinger_response(Aptok.webfinger_jrd(webfinger_subject(resource, actor), actor_id, aliases: aliases, links: links))
     end
 
     private def handle_apgateway(request : Request, method : String, head : Bool, read_method : Bool) : Response
@@ -138,7 +138,7 @@ module Aptork
       return nil unless authority_end
 
       authority = URI.decode(suffix[0...authority_end])
-      return nil unless Aptork.parse_ap_uri("#{AP_URI_PREFIX}#{authority}/")
+      return nil unless Aptok.parse_ap_uri("#{AP_URI_PREFIX}#{authority}/")
 
       gateway_path = suffix[authority_end..]
       return nil unless gateway_path.starts_with?("/")

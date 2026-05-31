@@ -1,6 +1,6 @@
 require "uri"
 
-module Aptork
+module Aptok
   AP_URI_PREFIX    = "ap://"
   AP_GATEWAY_PATH  = "/.well-known/apgateway"
   FEP_EF61_CONTEXT = "https://w3id.org/fep/ef61"

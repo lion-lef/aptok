@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   class Context
     private def forwardable_signature?(activity : JsonMap) : Bool
       !!activity["proof"]? || !!activity["signature"]? || !!@inbound_request.try(&.headers["Signature"]?)
@@ -11,12 +11,12 @@ module Aptork
     ) : SentActivity
       sender_identifier = identifier_from_actor_uri(delivery.actor)
       signing_key_pair = sender_key_pairs.empty? ? first_rsa_key_pair(sender_identifier) : first_rsa_key_pair(sender_key_pairs)
-      activity_id = @federation.telemetry.span("aptork.outbox.deliver", telemetry_attributes({"inbox" => delivery.inbox, "actor" => delivery.actor})) do
+      activity_id = @federation.telemetry.span("aptok.outbox.deliver", telemetry_attributes({"inbox" => delivery.inbox, "actor" => delivery.actor})) do
         @transport.deliver!(delivery, activity, signing_key_pair)
       end
       recipient = Recipient.new(delivery.target || delivery.inbox, delivery.inbox, delivery.actor_ids)
       record = @federation.record_sent(SentActivity.new(sender_identifier, recipient, activity_id, activity, true, "outbox"))
-      @federation.telemetry.counter("aptork.outbox.deliveries", attributes: telemetry_attributes({"status" => "delivered"}))
+      @federation.telemetry.counter("aptok.outbox.deliveries", attributes: telemetry_attributes({"status" => "delivered"}))
       record
     end
 
@@ -29,12 +29,12 @@ module Aptork
       sender_key_pairs : Array(ActorKeyPair) = [] of ActorKeyPair
     ) : SentActivity
       signing_key_pair = sender_key_pairs.empty? ? first_rsa_key_pair(forwarder_identifier) : first_rsa_key_pair(sender_key_pairs)
-      activity_id = @federation.telemetry.span("aptork.outbox.forward", telemetry_attributes({"inbox" => delivery.inbox, "actor" => delivery.actor})) do
+      activity_id = @federation.telemetry.span("aptok.outbox.forward", telemetry_attributes({"inbox" => delivery.inbox, "actor" => delivery.actor})) do
         @transport.forward!(delivery, activity, payload, source_headers, signing_key_pair)
       end
       recipient = Recipient.new(delivery.target || delivery.inbox, delivery.inbox, delivery.actor_ids)
       record = @federation.record_sent(SentActivity.new(forwarder_identifier, recipient, activity_id, activity, true, "outbox", 0, payload))
-      @federation.telemetry.counter("aptork.outbox.forwarded", attributes: telemetry_attributes({"status" => "delivered"}))
+      @federation.telemetry.counter("aptok.outbox.forwarded", attributes: telemetry_attributes({"status" => "delivered"}))
       record
     end
 
@@ -103,7 +103,7 @@ module Aptork
         recipients: recipients,
         collection_name: collection_name
       )
-      @federation.transform_activity(self, transform_context, Aptork.json(activity).as_h)
+      @federation.transform_activity(self, transform_context, Aptok.json(activity).as_h)
     end
 
     private def activity_with_object_proofs(sender_identifier : String, activity : JsonMap) : JsonMap
@@ -123,7 +123,7 @@ module Aptork
         Signatures.create_object_proof(signed, key_pair)
       end
       proofs = existing_proofs + added_proofs
-      signed["proof"] = proofs.size == 1 ? Aptork.json(proofs.first) : Aptork.json(proofs)
+      signed["proof"] = proofs.size == 1 ? Aptok.json(proofs.first) : Aptok.json(proofs)
       signed
     end
 
@@ -158,7 +158,7 @@ module Aptork
     end
 
     private def direct_recipients_for_delivery(recipients : Array(Recipient), options : SendActivityOptions) : Array(Recipient)
-      inboxes = Aptork.extract_inboxes(recipients, options.prefer_shared_inbox, options.exclude_base_uris)
+      inboxes = Aptok.extract_inboxes(recipients, options.prefer_shared_inbox, options.exclude_base_uris)
       inboxes.map do |inbox, extracted|
         Recipient.new(extracted.actor_ids.first, inbox, extracted.actor_ids, extracted.shared_inbox ? inbox : nil)
       end
@@ -259,11 +259,11 @@ module Aptork
           target: recipient.id,
           actor_ids: recipient.synchronization_actor_ids
         )
-        activity_id = @federation.telemetry.span("aptork.outbox.deliver", telemetry_attributes({"inbox" => delivery.inbox, "actor" => delivery.actor})) do
+        activity_id = @federation.telemetry.span("aptok.outbox.deliver", telemetry_attributes({"inbox" => delivery.inbox, "actor" => delivery.actor})) do
           @transport.deliver!(delivery, signed_activity, signing_key_pair)
         end
         record = @federation.record_sent(SentActivity.new(sender_identifier, recipient, activity_id, signed_activity))
-        @federation.telemetry.counter("aptork.outbox.deliveries", attributes: telemetry_attributes({"status" => "delivered"}))
+        @federation.telemetry.counter("aptok.outbox.deliveries", attributes: telemetry_attributes({"status" => "delivered"}))
         sent << record
       end
 

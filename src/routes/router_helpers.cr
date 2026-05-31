@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   class Router
     private def collection_response(ctx : Context, route : CollectionRoute, params : Hash(String, String), request : Request) : JsonMap?
       size = request.query["size"]?.try(&.to_i?) || 20
@@ -21,10 +21,10 @@ module Aptork
       dispatcher = route.dispatcher
       items = dispatcher ? dispatcher.call(ctx, params) : [] of JsonMap
       items = filter_collection_items(ctx, route, request, items)
-      response = route.ordered ? Aptork.paginated_ordered_collection(id, items, page, size) : Aptork.paginated_collection(id, items, page, size)
+      response = route.ordered ? Aptok.paginated_ordered_collection(id, items, page, size) : Aptok.paginated_collection(id, items, page, size)
       if page.nil?
         if total_items = @federation.collection_count(ctx, route.name, params)
-          response["totalItems"] = Aptork.json(total_items)
+          response["totalItems"] = Aptok.json(total_items)
         end
       end
       collection_with_metadata(route, params, response)
@@ -33,12 +33,12 @@ module Aptork
     private def cursor_collection_response(ctx : Context, route : CollectionRoute, params : Hash(String, String), request : Request, id : String, result : CollectionPageResult, cursor : String?, size : Int32) : JsonMap
       page_base = cursor_page_base(id, request)
       if cursor
-        return route.ordered ? Aptork.cursor_ordered_collection_page(id, page_base, result.items, cursor, result.next_cursor, result.prev_cursor, size) : Aptork.cursor_collection_page(id, page_base, result.items, cursor, result.next_cursor, result.prev_cursor, size)
+        return route.ordered ? Aptok.cursor_ordered_collection_page(id, page_base, result.items, cursor, result.next_cursor, result.prev_cursor, size) : Aptok.cursor_collection_page(id, page_base, result.items, cursor, result.next_cursor, result.prev_cursor, size)
       end
       total_items = result.total_items || @federation.collection_count(ctx, route.name, params)
       first_cursor = result.first_cursor || @federation.collection_first_cursor(ctx, route.name, params) || result.next_cursor
       last_cursor = result.last_cursor || @federation.collection_last_cursor(ctx, route.name, params)
-      route.ordered ? Aptork.cursor_ordered_collection(id, total_items, first_cursor, last_cursor, size, page_base) : Aptork.cursor_collection(id, total_items, first_cursor, last_cursor, size, page_base)
+      route.ordered ? Aptok.cursor_ordered_collection(id, total_items, first_cursor, last_cursor, size, page_base) : Aptok.cursor_collection(id, total_items, first_cursor, last_cursor, size, page_base)
     end
 
     private def cursor_page_base(id : String, request : Request) : String
@@ -98,7 +98,7 @@ module Aptork
 
     private def collection_with_metadata(route : CollectionRoute, params : Hash(String, String), collection : JsonMap) : JsonMap
       if item_type = @federation.collection_item_type(route.name)
-        collection["itemType"] = Aptork.json(item_type)
+        collection["itemType"] = Aptok.json(item_type)
       end
       collection
     end
@@ -156,7 +156,7 @@ module Aptork
     end
 
     private def normalized_acct_host(value : String) : String
-      normalized = Aptork.normalize_actor_handle(
+      normalized = Aptok.normalize_actor_handle(
         "_@#{value}",
         ActorHandleOptions.new(trim_leading_at: true, punycode: true)
       )

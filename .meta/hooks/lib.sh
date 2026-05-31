@@ -1,5 +1,5 @@
 # shellcheck shell=sh
-# Shared helpers for Aptork spec-check hooks.
+# Shared helpers for Aptok spec-check hooks.
 #
 # This file is meant to be sourced, not executed directly. It provides:
 #   - repo_root            : absolute path to the repository root

@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   module Vocab
     class Organization < Actor
       def self.from_json_ld(value : JSON::Any) : Organization
@@ -29,7 +29,7 @@ module Aptork
       end
 
       def self.from_json_ld(value : JsonMap) : Key
-        type = string_property(value, "type").try { |value| Aptork.type_name(value) }
+        type = string_property(value, "type").try { |value| Aptok.type_name(value) }
         case type
         when "CryptographicKey"
           CryptographicKey.from_json_ld(value)
@@ -93,7 +93,7 @@ module Aptork
       end
 
       def self.from_json_ld(value : JsonMap) : Collection
-        type = string_property(value, "type").try { |value| Aptork.type_name(value) }
+        type = string_property(value, "type").try { |value| Aptok.type_name(value) }
         case type
         when "OrderedCollection"
           OrderedCollection.from_json_ld(value)
@@ -180,7 +180,7 @@ module Aptork
       end
 
       def self.from_json_ld(value : JsonMap) : ForgeFedObject
-        type = string_property(value, "type").try { |value| Aptork.type_name(value) }
+        type = string_property(value, "type").try { |value| Aptok.type_name(value) }
         case type
         when "Repository"
           Repository.from_json_ld(value)

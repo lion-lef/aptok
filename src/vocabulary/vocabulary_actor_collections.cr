@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   module Vocab
     class Commit < ForgeFedObject
       getter hash : String?

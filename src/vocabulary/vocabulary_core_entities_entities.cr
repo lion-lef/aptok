@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   module Vocab
     activity_type Accept, Activity
     activity_type Add, Activity

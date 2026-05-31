@@ -6,12 +6,12 @@ require "digest/sha256"
 require "../vocabulary/vocabulary"
 require "../signatures/signatures_types"
 
-module Aptork
+module Aptok
   alias DocumentLoader = Proc(String, JsonMap?)
   alias DocumentGetProvider = Proc(String, HTTP::Headers, Tuple(Int32, String))
   alias MetadataDocumentGetProvider = Proc(String, HTTP::Headers, Tuple(Int32, String, HTTP::Headers))
   alias MetadataDocumentLoader = Proc(String, RemoteDocument?)
-  DEFAULT_USER_AGENT = "aptork/#{VERSION}"
+  DEFAULT_USER_AGENT = "aptok/#{VERSION}"
 
   record RemoteDocument,
     url : String,
@@ -38,7 +38,7 @@ module Aptork
 
   record DocumentCacheOptions,
     ttl : Time::Span? = Time::Span.new(hours: 1),
-    prefix : String = "aptork:remote-document"
+    prefix : String = "aptok:remote-document"
 
   record DocumentLoaderOptions,
     allow_private_address : Bool = false,

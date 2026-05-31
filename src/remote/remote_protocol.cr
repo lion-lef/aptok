@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   module Remote
     def self.get_actor_handle(actor : Vocab::Actor, loader : DocumentLoader, options : ActorHandleOptions = ActorHandleOptions.new) : String
       get_actor_handle(actor.to_json_ld, loader, options)

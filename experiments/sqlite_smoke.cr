@@ -1,8 +1,8 @@
-require "../src/aptork"
+require "../src/aptok"
 require "../src/store/sqlite"
 
-conn = Aptork::SqliteConnection.open(":memory:")
-store = Aptork::SqlKvStore.new(conn)
+conn = Aptok::SqliteConnection.open(":memory:")
+store = Aptok::SqlKvStore.new(conn)
 
 store.set("actor:alice", "{\"name\":\"Alice\"}")
 puts "get => #{store.get("actor:alice").inspect}"
@@ -19,9 +19,9 @@ puts "temp present => #{store.get("temp").inspect}"
 sleep 30.milliseconds
 puts "temp expired => #{store.get("temp").inspect}"
 
-queue = Aptork::SqlMessageQueue.new(conn)
-queue.enqueue("inbox", Aptork::JsonMap{"a" => JSON::Any.new("1")})
-queue.enqueue("inbox", Aptork::JsonMap{"a" => JSON::Any.new("2")})
+queue = Aptok::SqlMessageQueue.new(conn)
+queue.enqueue("inbox", Aptok::JsonMap{"a" => JSON::Any.new("1")})
+queue.enqueue("inbox", Aptok::JsonMap{"a" => JSON::Any.new("2")})
 puts "depth => #{queue.depth("inbox")}"
 processed = [] of String
 res = queue.process_one("inbox") { |m| processed << m.payload["a"].as_s }
@@ -29,9 +29,9 @@ puts "process_one => #{res}, payload=#{processed}"
 puts "depth after => #{queue.depth("inbox")}"
 
 # retry/dead
-fail_q = Aptork::SqlMessageQueue.new(conn, table: "q2")
-fail_q.enqueue("d", Aptork::JsonMap{"x" => JSON::Any.new("y")})
-policy = Aptork::RetryPolicy.new(max_attempts: 1)
+fail_q = Aptok::SqlMessageQueue.new(conn, table: "q2")
+fail_q.enqueue("d", Aptok::JsonMap{"x" => JSON::Any.new("y")})
+policy = Aptok::RetryPolicy.new(max_attempts: 1)
 r = fail_q.process_one("d", policy) { |m| raise "boom" }
 puts "fail process_one => #{r}"
 puts "dead => #{fail_q.dead_messages("d").size}"

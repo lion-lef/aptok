@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   def self.valid_forgefed?(document : JsonMap) : Bool
     forgefed_validation_errors(document).empty?
   end

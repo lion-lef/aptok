@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   class Federation
     private alias DslObjectDispatcher = ObjectDispatcher | ParamObjectDispatcher
     private alias DslCollectionDispatcher = CollectionDispatcher | ParamCollectionDispatcher | ParamCursorCollectionDispatcher
@@ -27,6 +27,57 @@ module Aptork
       def {{method_name.id}}(name : String, path : String, &block : {{block_type.id}}) : self
         {{method_name.id}}(name, path, block)
       end
+    end
+
+    def document_loader(loader : DocumentLoader) : self
+      set_document_loader(loader)
+    end
+
+    forward_block document_loader, DocumentLoader
+
+    def context_loader(loader : DocumentLoader) : self
+      set_context_loader(loader)
+    end
+
+    forward_block context_loader, DocumentLoader
+
+    def document_get_provider(provider : DocumentGetProvider) : self
+      set_document_get_provider(provider)
+    end
+
+    forward_block document_get_provider, DocumentGetProvider
+
+    def telemetry(metrics : Telemetry) : self
+      set_telemetry(metrics)
+    end
+
+    def document_cache(ttl : Time::Span? = Time::Span.new(hours: 1), prefix : String = "aptok:remote-document") : self
+      enable_document_cache(ttl, prefix)
+    end
+
+    def outbox_queue(
+      queue : MessageQueue,
+      queue_name : String = "outbox",
+      retry_policy : RetryPolicy = RetryPolicy.new
+    ) : self
+      configure_outbox_queue(queue, queue_name, retry_policy)
+    end
+
+    def inbox_queue(
+      queue : MessageQueue,
+      queue_name : String = "inbox",
+      retry_policy : RetryPolicy = RetryPolicy.new
+    ) : self
+      configure_inbox_queue(queue, queue_name, retry_policy)
+    end
+
+    def fanout_queue(
+      queue : MessageQueue,
+      queue_name : String = "fanout",
+      retry_policy : RetryPolicy = RetryPolicy.new,
+      threshold : Int32 = 50
+    ) : self
+      configure_fanout_queue(queue, queue_name, retry_policy, threshold)
     end
 
     def actor(path : String, dispatcher : ActorDispatcher) : self
@@ -198,6 +249,60 @@ module Aptork
     end
 
     forward_block signature_keys, SignatureKeyResolver
+
+    def inbox_verifier(verifier : InboxVerifier) : self
+      set_inbox_verifier(verifier)
+    end
+
+    forward_block inbox_verifier, InboxVerifier
+
+    def inbox_verifier(verifier : Proc(Request, JsonMap, Bool)) : self
+      set_inbox_verifier(verifier)
+    end
+
+    def inbox_signature_verification(options : InboxSignatureOptions = InboxSignatureOptions.new) : self
+      enable_inbox_signature_verification(options)
+    end
+
+    def authorize_actor(authorizer : AuthorizePredicate) : self
+      set_actor_authorizer(authorizer)
+    end
+
+    forward_block authorize_actor, AuthorizePredicate
+
+    forward_block on_unverified_activity, UnverifiedActivityListener
+
+    def permanent_failure_status_codes(codes : Enumerable(Int32)) : self
+      set_permanent_failure_status_codes(codes)
+    end
+
+    def outbox_permanent_failures(handler : OutboxPermanentFailureHandler) : self
+      set_outbox_permanent_failure_handler(handler)
+    end
+
+    forward_block outbox_permanent_failures, OutboxPermanentFailureHandler
+
+    def outbox_errors(handler : OutboxErrorHandler) : self
+      set_outbox_error_handler(handler)
+    end
+
+    forward_block outbox_errors, OutboxErrorHandler
+
+    def activity_transformer(transformer : ActivityTransformer) : self
+      add_activity_transformer(transformer)
+    end
+
+    forward_block activity_transformer, ActivityTransformer
+
+    def default_activity_transformers : self
+      add_default_activity_transformers
+    end
+
+    def undelivered_outbox_activity(listener : UndeliveredOutboxActivityListener) : self
+      on_undelivered_outbox_activity(listener)
+    end
+
+    forward_block undelivered_outbox_activity, UndeliveredOutboxActivityListener
   end
 
   def self.federation(origin : String, **options, &block) : Federation

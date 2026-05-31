@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   class Federation
     def self.collection_synchronization_header(collection_id : String, actor_ids : Iterable(String)) : String?
       ids = actor_ids.to_a
@@ -28,7 +28,7 @@ module Aptork
         listener.call(ctx, activity)
       else
         activity_id = activity["id"]?.try(&.as_s?) || "(missing id)"
-        Log.for("aptork.federation.outbox").warn do
+        Log.for("aptok.federation.outbox").warn do
           "outbox listener returned without delivering activity #{activity_id}; call Context#send_activity or Context#forward_activity to federate it"
         end
       end
@@ -60,7 +60,7 @@ module Aptork
 
       callback.call(ctx, error)
     rescue callback_error
-      Log.for("aptork.federation.#{kind}").error(exception: callback_error) do
+      Log.for("aptok.federation.#{kind}").error(exception: callback_error) do
         "unexpected error in #{kind} error handler"
       end
     end
@@ -68,7 +68,7 @@ module Aptork
     private def matching_listeners(registry : Hash(String, Array(T)), activity : JsonMap) : Array(T) forall T
       listeners = [] of T
       activity_type_names(activity).each do |type|
-        Aptork.type_lineage(type).each do |ancestor|
+        Aptok.type_lineage(type).each do |ancestor|
           registry[ancestor]?.try { |typed| listeners.concat(typed) }
         end
       end
@@ -93,7 +93,7 @@ module Aptork
     private def listener_type_name(type : String) : String
       return type if type == "*" || type == "Activity"
 
-      Aptork.type_name(type)
+      Aptok.type_name(type)
     end
 
     private def telemetry_attributes(values : Hash(String, String)) : TelemetryAttributes

@@ -29,7 +29,7 @@ module Aptork
       @host : String = "127.0.0.1",
       @port : Int32 = 6379,
       @password : String? = nil,
-      @database : Int32? = nil,
+      @database : Int32? = nil
     )
       @socket = TCPSocket.new(@host, @port)
       command(["AUTH", password]) if (password = @password)

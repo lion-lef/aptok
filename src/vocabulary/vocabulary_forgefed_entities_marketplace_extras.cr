@@ -179,7 +179,7 @@ module Aptork
     upload_media : String? = nil,
     proxy_url : String? = nil,
     public_key : JsonMap? = nil,
-    assertion_methods : Array(JsonMap) = [] of JsonMap,
+    assertion_methods : Array(JsonMap) = [] of JsonMap
   ) : JsonMap
     properties = JsonMap{
       "preferredUsername" => json(preferred_username),
@@ -239,7 +239,7 @@ module Aptork
     content : String,
     name : String? = nil,
     attributed_to : String? = nil,
-    to : Array(String) = [PUBLIC_COLLECTION],
+    to : Array(String) = [PUBLIC_COLLECTION]
   ) : JsonMap
     properties = JsonMap{
       "content"   => json(content),
@@ -250,6 +250,4 @@ module Aptork
     properties["attributedTo"] = json(attributed_to) if attributed_to
     Aptork.object("Note", id, properties)
   end
-
-
 end

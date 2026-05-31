@@ -21,7 +21,7 @@ module Aptork
       @document_loader_override : DocumentLoader? = nil,
       @context_loader_override : DocumentLoader? = nil,
       canonical_origin : String? = nil,
-      @key_pairs_dispatcher_identifier : String? = nil,
+      @key_pairs_dispatcher_identifier : String? = nil
     )
       @origin = strip_trailing_slash(@origin)
       @canonical_origin = strip_trailing_slash(canonical_origin || @origin)

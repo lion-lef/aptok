@@ -1,6 +1,5 @@
 module Aptork
   class Federation
-
     def set_outbox_listener_error_handler(handler : OutboxListenerErrorHandler) : self
       @outbox_listener_error_handler = handler
       self
@@ -210,7 +209,7 @@ module Aptork
       on_not_found : RequestHandler? = nil,
       on_not_acceptable : RequestHandler? = nil,
       on_unauthorized : RequestHandler? = nil,
-      context_data : JSON::Any? = nil,
+      context_data : JSON::Any? = nil
     ) : Response
       handle(request, FetchOptions.new(on_not_found, on_not_acceptable, on_unauthorized, context_data))
     end
@@ -239,7 +238,7 @@ module Aptork
       on_not_found : RequestHandler? = nil,
       on_not_acceptable : RequestHandler? = nil,
       on_unauthorized : RequestHandler? = nil,
-      context_data : JSON::Any? = nil,
+      context_data : JSON::Any? = nil
     ) : Response
       handle(request, on_not_found: on_not_found, on_not_acceptable: on_not_acceptable, on_unauthorized: on_unauthorized, context_data: context_data)
     end

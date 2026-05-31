@@ -96,7 +96,7 @@ module Aptork
     def configure_outbox_queue(
       queue : MessageQueue,
       queue_name : String = "outbox",
-      retry_policy : RetryPolicy = RetryPolicy.new,
+      retry_policy : RetryPolicy = RetryPolicy.new
     ) : self
       @outbox_queue = queue
       @outbox_queue_name = queue_name
@@ -107,7 +107,7 @@ module Aptork
     def configure_inbox_queue(
       queue : MessageQueue,
       queue_name : String = "inbox",
-      retry_policy : RetryPolicy = RetryPolicy.new,
+      retry_policy : RetryPolicy = RetryPolicy.new
     ) : self
       @inbox_queue = queue
       @inbox_queue_name = queue_name
@@ -119,7 +119,7 @@ module Aptork
       queue : MessageQueue,
       queue_name : String = "fanout",
       retry_policy : RetryPolicy = RetryPolicy.new,
-      threshold : Int32 = 50,
+      threshold : Int32 = 50
     ) : self
       @fanout_queue = queue
       @fanout_queue_name = queue_name

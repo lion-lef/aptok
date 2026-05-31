@@ -73,5 +73,4 @@ module Aptork
     proof_purpose : String = "assertionMethod",
     proof_type : String = "DataIntegrityProof",
     cryptosuite : String = "eddsa-jcs-2022"
-
 end

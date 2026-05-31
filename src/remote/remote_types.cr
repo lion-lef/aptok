@@ -50,5 +50,4 @@ module Aptork
 
   record ProofKeyLookupOptions,
     cache_ttl : Time::Span? = Time::Span.new(hours: 1)
-
 end

@@ -7,7 +7,7 @@ module Aptork
     private def process_outbound_delivery(
       delivery : DeliveryConfig,
       activity : JsonMap,
-      sender_key_pairs : Array(ActorKeyPair) = [] of ActorKeyPair,
+      sender_key_pairs : Array(ActorKeyPair) = [] of ActorKeyPair
     ) : SentActivity
       sender_identifier = identifier_from_actor_uri(delivery.actor)
       signing_key_pair = sender_key_pairs.empty? ? first_rsa_key_pair(sender_identifier) : first_rsa_key_pair(sender_key_pairs)
@@ -26,7 +26,7 @@ module Aptork
       activity : JsonMap,
       payload : String,
       source_headers : Hash(String, String),
-      sender_key_pairs : Array(ActorKeyPair) = [] of ActorKeyPair,
+      sender_key_pairs : Array(ActorKeyPair) = [] of ActorKeyPair
     ) : SentActivity
       signing_key_pair = sender_key_pairs.empty? ? first_rsa_key_pair(forwarder_identifier) : first_rsa_key_pair(sender_key_pairs)
       activity_id = @federation.telemetry.span("aptork.outbox.forward", telemetry_attributes({"inbox" => delivery.inbox, "actor" => delivery.actor})) do
@@ -95,7 +95,7 @@ module Aptork
       sender_identifier : String,
       recipients : Array(Recipient),
       activity : JsonMap,
-      collection_name : String? = nil,
+      collection_name : String? = nil
     ) : JsonMap
       transform_context = ActivityTransformContext.new(
         sender_identifier: sender_identifier,
@@ -136,7 +136,7 @@ module Aptork
     private def recipients_from_collection(
       sender_identifier : String,
       collection_name : String,
-      options : SendActivityOptions,
+      options : SendActivityOptions
     ) : Array(Recipient)
       objects = collection_name == "followers" ? @federation.dispatch_collection_for_delivery(self, "followers", sender_identifier) : collection(collection_name, sender_identifier)
       recipients_by_inbox = Hash(String, Recipient).new
@@ -169,7 +169,7 @@ module Aptork
       recipients : Array(Recipient),
       activity : JsonMap,
       collection_name : String?,
-      options : SendActivityOptions,
+      options : SendActivityOptions
     ) : SendActivityResult
       validate_send_activity_options!(options)
 
@@ -206,7 +206,7 @@ module Aptork
       sender_key_pairs : Array(ActorKeyPair),
       recipients : Array(Recipient),
       activity : JsonMap,
-      options : SendActivityOptions,
+      options : SendActivityOptions
     ) : SendActivityResult
       validate_send_activity_options!(options)
       raise ArgumentError.new("sender key pairs must not be empty") if sender_key_pairs.empty?
@@ -279,7 +279,7 @@ module Aptork
       signed_activity : JsonMap,
       enqueue_options : EnqueueOptions = EnqueueOptions.new,
       collection_name : String? = nil,
-      sync_collection : Bool = false,
+      sync_collection : Bool = false
     ) : Array(QueuedActivity)
       queue = @federation.outbox_queue
       raise ArgumentError.new("outbox queue is not configured") unless queue

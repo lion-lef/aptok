@@ -4,7 +4,7 @@ module Aptork
       forwarder_identifier : String,
       actor : JsonMap,
       activity : JsonMap,
-      options : ForwardActivityOptions = ForwardActivityOptions.new,
+      options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
       recipient = Aptork.recipient_from_actor(actor, options.prefer_shared_inbox)
       recipients = recipient ? [recipient] : [] of Recipient
@@ -15,7 +15,7 @@ module Aptork
       forwarder : NamedTuple(identifier: String),
       actor : JsonMap,
       activity : JsonMap,
-      options : ForwardActivityOptions = ForwardActivityOptions.new,
+      options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
       forward_activity(forwarder[:identifier], actor, activity, options)
     end
@@ -24,7 +24,7 @@ module Aptork
       forwarder : NamedTuple(username: String),
       actor : JsonMap,
       activity : JsonMap,
-      options : ForwardActivityOptions = ForwardActivityOptions.new,
+      options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
       forward_activity(identifier_from_username(forwarder[:username]), actor, activity, options)
     end
@@ -33,7 +33,7 @@ module Aptork
       forwarder_identifier : String,
       actors : Array(Vocab::Actor),
       activity : JsonMap,
-      options : ForwardActivityOptions = ForwardActivityOptions.new,
+      options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
       recipients = actors.compact_map { |actor| Aptork.recipient_from_actor(actor, options.prefer_shared_inbox) }
       forward_activity(forwarder_identifier, recipients, activity, options)
@@ -43,7 +43,7 @@ module Aptork
       forwarder : NamedTuple(identifier: String),
       actors : Array(Vocab::Actor),
       activity : JsonMap,
-      options : ForwardActivityOptions = ForwardActivityOptions.new,
+      options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
       forward_activity(forwarder[:identifier], actors, activity, options)
     end
@@ -52,7 +52,7 @@ module Aptork
       forwarder : NamedTuple(username: String),
       actors : Array(Vocab::Actor),
       activity : JsonMap,
-      options : ForwardActivityOptions = ForwardActivityOptions.new,
+      options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
       forward_activity(identifier_from_username(forwarder[:username]), actors, activity, options)
     end
@@ -61,7 +61,7 @@ module Aptork
       forwarder_identifier : String,
       actors : Array(JsonMap),
       activity : JsonMap,
-      options : ForwardActivityOptions = ForwardActivityOptions.new,
+      options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
       recipients = actors.compact_map { |actor| Aptork.recipient_from_actor(actor, options.prefer_shared_inbox) }
       forward_activity(forwarder_identifier, recipients, activity, options)
@@ -71,7 +71,7 @@ module Aptork
       forwarder : NamedTuple(identifier: String),
       actors : Array(JsonMap),
       activity : JsonMap,
-      options : ForwardActivityOptions = ForwardActivityOptions.new,
+      options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
       forward_activity(forwarder[:identifier], actors, activity, options)
     end
@@ -80,7 +80,7 @@ module Aptork
       forwarder : NamedTuple(username: String),
       actors : Array(JsonMap),
       activity : JsonMap,
-      options : ForwardActivityOptions = ForwardActivityOptions.new,
+      options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
       forward_activity(identifier_from_username(forwarder[:username]), actors, activity, options)
     end
@@ -89,7 +89,7 @@ module Aptork
       forwarder_key_pair : ActorKeyPair,
       recipient : Recipient,
       activity : JsonMap,
-      options : ForwardActivityOptions = ForwardActivityOptions.new,
+      options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
       forward_activity([forwarder_key_pair], [recipient], activity, options)
     end
@@ -98,7 +98,7 @@ module Aptork
       forwarder_key_pairs : Array(ActorKeyPair),
       recipient : Recipient,
       activity : JsonMap,
-      options : ForwardActivityOptions = ForwardActivityOptions.new,
+      options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
       forward_activity(forwarder_key_pairs, [recipient], activity, options)
     end
@@ -107,7 +107,7 @@ module Aptork
       forwarder_key_pair : ActorKeyPair,
       actor : Vocab::Actor,
       activity : JsonMap,
-      options : ForwardActivityOptions = ForwardActivityOptions.new,
+      options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
       forward_activity([forwarder_key_pair], actor, activity, options)
     end
@@ -116,7 +116,7 @@ module Aptork
       forwarder_key_pairs : Array(ActorKeyPair),
       actor : Vocab::Actor,
       activity : JsonMap,
-      options : ForwardActivityOptions = ForwardActivityOptions.new,
+      options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
       recipient = Aptork.recipient_from_actor(actor, options.prefer_shared_inbox)
       recipients = recipient ? [recipient] : [] of Recipient
@@ -127,7 +127,7 @@ module Aptork
       forwarder_key_pair : ActorKeyPair,
       actor : JsonMap,
       activity : JsonMap,
-      options : ForwardActivityOptions = ForwardActivityOptions.new,
+      options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
       forward_activity([forwarder_key_pair], actor, activity, options)
     end
@@ -136,7 +136,7 @@ module Aptork
       forwarder_key_pairs : Array(ActorKeyPair),
       actor : JsonMap,
       activity : JsonMap,
-      options : ForwardActivityOptions = ForwardActivityOptions.new,
+      options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
       recipient = Aptork.recipient_from_actor(actor, options.prefer_shared_inbox)
       recipients = recipient ? [recipient] : [] of Recipient
@@ -147,7 +147,7 @@ module Aptork
       forwarder_key_pair : ActorKeyPair,
       recipients : Array(Recipient),
       activity : JsonMap,
-      options : ForwardActivityOptions = ForwardActivityOptions.new,
+      options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
       forward_activity([forwarder_key_pair], recipients, activity, options)
     end
@@ -156,7 +156,7 @@ module Aptork
       forwarder_key_pair : ActorKeyPair,
       actors : Array(Vocab::Actor),
       activity : JsonMap,
-      options : ForwardActivityOptions = ForwardActivityOptions.new,
+      options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
       forward_activity([forwarder_key_pair], actors, activity, options)
     end
@@ -165,7 +165,7 @@ module Aptork
       forwarder_key_pairs : Array(ActorKeyPair),
       actors : Array(Vocab::Actor),
       activity : JsonMap,
-      options : ForwardActivityOptions = ForwardActivityOptions.new,
+      options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
       recipients = actors.compact_map { |actor| Aptork.recipient_from_actor(actor, options.prefer_shared_inbox) }
       forward_activity(forwarder_key_pairs, recipients, activity, options)
@@ -175,7 +175,7 @@ module Aptork
       forwarder_key_pair : ActorKeyPair,
       actors : Array(JsonMap),
       activity : JsonMap,
-      options : ForwardActivityOptions = ForwardActivityOptions.new,
+      options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
       forward_activity([forwarder_key_pair], actors, activity, options)
     end
@@ -184,7 +184,7 @@ module Aptork
       forwarder_key_pairs : Array(ActorKeyPair),
       actors : Array(JsonMap),
       activity : JsonMap,
-      options : ForwardActivityOptions = ForwardActivityOptions.new,
+      options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
       recipients = actors.compact_map { |actor| Aptork.recipient_from_actor(actor, options.prefer_shared_inbox) }
       forward_activity(forwarder_key_pairs, recipients, activity, options)
@@ -194,7 +194,7 @@ module Aptork
       forwarder_key_pairs : Array(ActorKeyPair),
       recipients : Array(Recipient),
       activity : JsonMap,
-      options : ForwardActivityOptions = ForwardActivityOptions.new,
+      options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
       raise ArgumentError.new("forwarder key pairs must not be empty") if forwarder_key_pairs.empty?
       return [] of SentActivity if options.skip_if_unsigned && !forwardable_signature?(activity)
@@ -248,7 +248,7 @@ module Aptork
       activity : JsonMap,
       options : EnqueueOptions = EnqueueOptions.new,
       collection_name : String? = nil,
-      sync_collection : Bool = false,
+      sync_collection : Bool = false
     ) : Array(QueuedActivity)
       queue = @federation.outbox_queue
       raise ArgumentError.new("outbox queue is not configured") unless queue

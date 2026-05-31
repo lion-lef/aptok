@@ -8,7 +8,7 @@ module Aptork
   def self.extract_inboxes(
     recipients : Array(Recipient),
     prefer_shared_inbox : Bool = false,
-    exclude_base_uris : Array(String) = [] of String,
+    exclude_base_uris : Array(String) = [] of String
   ) : Hash(String, ExtractedInbox)
     inboxes = Hash(String, ExtractedInbox).new
 
@@ -104,7 +104,7 @@ module Aptork
       telemetry : Telemetry = NoopTelemetry.new,
       manually_start_queue : Bool = false,
       permanent_failure_status_codes : Enumerable(Int32) = Set{404, 410},
-      trailing_slash_insensitive : Bool = false,
+      trailing_slash_insensitive : Bool = false
     ) : Federation
       federation = Federation.create(
         origin,
@@ -158,7 +158,7 @@ module Aptork
       telemetry : Telemetry = NoopTelemetry.new,
       manually_start_queue : Bool = false,
       permanent_failure_status_codes : Enumerable(Int32) = Set{404, 410},
-      trailing_slash_insensitive : Bool = false,
+      trailing_slash_insensitive : Bool = false
     ) : Federation
       build(
         origin.web_origin,

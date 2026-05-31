@@ -1,5 +1,4 @@
 module Aptork
-
   class Router
     private def collection_response(ctx : Context, route : CollectionRoute, params : Hash(String, String), request : Request) : JsonMap?
       size = request.query["size"]?.try(&.to_i?) || 20

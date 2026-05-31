@@ -6,7 +6,6 @@ require "../http/http"
 require "../vocabulary/vocabulary"
 
 module Aptork
-
   module Signatures
     BASE58BTC_ALPHABET      = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
     ED25519_MULTIKEY_PREFIX = Bytes[0xed_u8, 0x01_u8]

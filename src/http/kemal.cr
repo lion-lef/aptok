@@ -38,7 +38,7 @@ module Aptork
 
   def self.kemal_handler(
     federation : Federation,
-    options : FetchOptions = FetchOptions.new,
+    options : FetchOptions = FetchOptions.new
   ) : Proc(::HTTP::Server::Context, Nil)
     ->(context : ::HTTP::Server::Context) do
       response = handle_kemal_request(federation, context, options)

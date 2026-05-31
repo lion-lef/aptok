@@ -7,7 +7,7 @@ module Aptork
       options : EnqueueOptions = EnqueueOptions.new,
       collection_name : String? = nil,
       sync_collection : Bool = false,
-      sender_key_pairs : Array(ActorKeyPair) = [] of ActorKeyPair,
+      sender_key_pairs : Array(ActorKeyPair) = [] of ActorKeyPair
     ) : Nil
       queue = @federation.fanout_queue
       raise ArgumentError.new("fanout queue is not configured") unless queue
@@ -23,7 +23,7 @@ module Aptork
       activity : JsonMap,
       options : EnqueueOptions = EnqueueOptions.new,
       collection_name : String? = nil,
-      sync_collection : Bool = false,
+      sync_collection : Bool = false
     ) : Array(QueuedActivity)
       enqueue_activity(sender[:identifier], recipients, activity, options, collection_name, sync_collection)
     end
@@ -34,14 +34,14 @@ module Aptork
       activity : JsonMap,
       options : EnqueueOptions = EnqueueOptions.new,
       collection_name : String? = nil,
-      sync_collection : Bool = false,
+      sync_collection : Bool = false
     ) : Array(QueuedActivity)
       enqueue_activity(identifier_from_username(sender[:username]), recipients, activity, options, collection_name, sync_collection)
     end
 
     def process_queued_activities(
       now : Time = Time.utc,
-      limit : Int32? = nil,
+      limit : Int32? = nil
     ) : Array(QueueProcessResult)
       queue = @federation.outbox_queue
       raise ArgumentError.new("outbox queue is not configured") unless queue
@@ -110,7 +110,7 @@ module Aptork
 
     def process_queued_fanout_activities(
       now : Time = Time.utc,
-      limit : Int32? = nil,
+      limit : Int32? = nil
     ) : Array(QueueProcessResult)
       queue = @federation.fanout_queue
       raise ArgumentError.new("fanout queue is not configured") unless queue
@@ -122,7 +122,7 @@ module Aptork
 
     def process_queued_inbox_activities(
       now : Time = Time.utc,
-      limit : Int32? = nil,
+      limit : Int32? = nil
     ) : Array(QueueProcessResult)
       queue = @federation.inbox_queue
       raise ArgumentError.new("inbox queue is not configured") unless queue
@@ -167,7 +167,7 @@ module Aptork
     def route_activity(
       recipient_identifier : String?,
       activity : JsonMap,
-      options : RouteActivityOptions = RouteActivityOptions.new,
+      options : RouteActivityOptions = RouteActivityOptions.new
     ) : Bool
       route_activity_result(recipient_identifier, activity, options).handled?
     end
@@ -175,7 +175,7 @@ module Aptork
     def route_activity_result(
       recipient_identifier : String?,
       activity : JsonMap,
-      options : RouteActivityOptions = RouteActivityOptions.new,
+      options : RouteActivityOptions = RouteActivityOptions.new
     ) : RouteActivityResult
       ctx = with_recipient(recipient_identifier)
       ctx = ctx.with_document_loader(options.document_loader || @federation.inbox_document_loader(ctx, recipient_identifier))
@@ -195,6 +195,5 @@ module Aptork
 
       @federation.route_activity_result(ctx, routed_activity)
     end
-
   end
 end

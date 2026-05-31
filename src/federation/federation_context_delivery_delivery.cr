@@ -4,7 +4,7 @@ module Aptork
       sender : NamedTuple(username: String),
       actor : Vocab::Actor,
       activity : JsonMap,
-      options : SendActivityOptions = SendActivityOptions.new,
+      options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
       send_activity(identifier_from_username(sender[:username]), actor, activity, options)
     end
@@ -13,7 +13,7 @@ module Aptork
       sender : NamedTuple(identifier: String),
       actor : JsonMap,
       activity : JsonMap,
-      options : SendActivityOptions = SendActivityOptions.new,
+      options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
       send_activity(sender[:identifier], actor, activity, options)
     end
@@ -22,7 +22,7 @@ module Aptork
       sender : NamedTuple(username: String),
       actor : JsonMap,
       activity : JsonMap,
-      options : SendActivityOptions = SendActivityOptions.new,
+      options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
       send_activity(identifier_from_username(sender[:username]), actor, activity, options)
     end
@@ -31,7 +31,7 @@ module Aptork
       sender : NamedTuple(identifier: String),
       actors : Array(Vocab::Actor),
       activity : JsonMap,
-      options : SendActivityOptions = SendActivityOptions.new,
+      options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
       send_activity(sender[:identifier], actors, activity, options)
     end
@@ -40,7 +40,7 @@ module Aptork
       sender : NamedTuple(username: String),
       actors : Array(Vocab::Actor),
       activity : JsonMap,
-      options : SendActivityOptions = SendActivityOptions.new,
+      options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
       send_activity(identifier_from_username(sender[:username]), actors, activity, options)
     end
@@ -49,7 +49,7 @@ module Aptork
       sender : NamedTuple(identifier: String),
       actors : Array(JsonMap),
       activity : JsonMap,
-      options : SendActivityOptions = SendActivityOptions.new,
+      options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
       send_activity(sender[:identifier], actors, activity, options)
     end
@@ -58,7 +58,7 @@ module Aptork
       sender : NamedTuple(username: String),
       actors : Array(JsonMap),
       activity : JsonMap,
-      options : SendActivityOptions = SendActivityOptions.new,
+      options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
       send_activity(identifier_from_username(sender[:username]), actors, activity, options)
     end
@@ -67,7 +67,7 @@ module Aptork
       sender : NamedTuple(identifier: String),
       collection_name : String,
       activity : JsonMap,
-      options : SendActivityOptions = SendActivityOptions.new,
+      options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
       send_activity(sender[:identifier], collection_name, activity, options)
     end
@@ -76,7 +76,7 @@ module Aptork
       sender : NamedTuple(username: String),
       collection_name : String,
       activity : JsonMap,
-      options : SendActivityOptions = SendActivityOptions.new,
+      options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
       send_activity(identifier_from_username(sender[:username]), collection_name, activity, options)
     end
@@ -84,14 +84,14 @@ module Aptork
     def forward_activity(
       forwarder_identifier : String,
       activity : JsonMap,
-      options : ForwardActivityOptions = ForwardActivityOptions.new,
+      options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
       forward_activity(forwarder_identifier, "followers", activity, options)
     end
 
     def forward_activity(
       activity : JsonMap,
-      options : ForwardActivityOptions = ForwardActivityOptions.new,
+      options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
       return [] of SentActivity if options.skip_if_unsigned && !forwardable_signature?(activity)
 
@@ -111,7 +111,7 @@ module Aptork
     def forward_activity(
       forwarder : NamedTuple(identifier: String),
       activity : JsonMap,
-      options : ForwardActivityOptions = ForwardActivityOptions.new,
+      options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
       forward_activity(forwarder[:identifier], activity, options)
     end
@@ -119,7 +119,7 @@ module Aptork
     def forward_activity(
       forwarder : NamedTuple(username: String),
       activity : JsonMap,
-      options : ForwardActivityOptions = ForwardActivityOptions.new,
+      options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
       forward_activity(identifier_from_username(forwarder[:username]), activity, options)
     end
@@ -128,7 +128,7 @@ module Aptork
       forwarder_identifier : String,
       collection_name : String,
       activity : JsonMap,
-      options : ForwardActivityOptions = ForwardActivityOptions.new,
+      options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
       return [] of SentActivity if options.skip_if_unsigned && !forwardable_signature?(activity)
 
@@ -147,7 +147,7 @@ module Aptork
       forwarder : NamedTuple(identifier: String),
       collection_name : String,
       activity : JsonMap,
-      options : ForwardActivityOptions = ForwardActivityOptions.new,
+      options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
       forward_activity(forwarder[:identifier], collection_name, activity, options)
     end
@@ -156,7 +156,7 @@ module Aptork
       forwarder : NamedTuple(username: String),
       collection_name : String,
       activity : JsonMap,
-      options : ForwardActivityOptions = ForwardActivityOptions.new,
+      options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
       forward_activity(identifier_from_username(forwarder[:username]), collection_name, activity, options)
     end
@@ -165,7 +165,7 @@ module Aptork
       forwarder_identifier : String,
       recipients : Array(Recipient),
       activity : JsonMap,
-      options : ForwardActivityOptions = ForwardActivityOptions.new,
+      options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
       return [] of SentActivity if options.skip_if_unsigned && !forwardable_signature?(activity)
 
@@ -215,7 +215,7 @@ module Aptork
       forwarder : NamedTuple(identifier: String),
       recipient : Recipient,
       activity : JsonMap,
-      options : ForwardActivityOptions = ForwardActivityOptions.new,
+      options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
       forward_activity(forwarder[:identifier], [recipient], activity, options)
     end
@@ -224,7 +224,7 @@ module Aptork
       forwarder : NamedTuple(username: String),
       recipient : Recipient,
       activity : JsonMap,
-      options : ForwardActivityOptions = ForwardActivityOptions.new,
+      options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
       forward_activity(identifier_from_username(forwarder[:username]), [recipient], activity, options)
     end
@@ -233,7 +233,7 @@ module Aptork
       forwarder : NamedTuple(identifier: String),
       recipients : Array(Recipient),
       activity : JsonMap,
-      options : ForwardActivityOptions = ForwardActivityOptions.new,
+      options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
       forward_activity(forwarder[:identifier], recipients, activity, options)
     end
@@ -242,7 +242,7 @@ module Aptork
       forwarder : NamedTuple(username: String),
       recipients : Array(Recipient),
       activity : JsonMap,
-      options : ForwardActivityOptions = ForwardActivityOptions.new,
+      options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
       forward_activity(identifier_from_username(forwarder[:username]), recipients, activity, options)
     end
@@ -251,7 +251,7 @@ module Aptork
       forwarder_identifier : String,
       actor : Vocab::Actor,
       activity : JsonMap,
-      options : ForwardActivityOptions = ForwardActivityOptions.new,
+      options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
       recipient = Aptork.recipient_from_actor(actor, options.prefer_shared_inbox)
       recipients = recipient ? [recipient] : [] of Recipient
@@ -262,7 +262,7 @@ module Aptork
       forwarder : NamedTuple(identifier: String),
       actor : Vocab::Actor,
       activity : JsonMap,
-      options : ForwardActivityOptions = ForwardActivityOptions.new,
+      options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
       forward_activity(forwarder[:identifier], actor, activity, options)
     end
@@ -271,7 +271,7 @@ module Aptork
       forwarder : NamedTuple(username: String),
       actor : Vocab::Actor,
       activity : JsonMap,
-      options : ForwardActivityOptions = ForwardActivityOptions.new,
+      options : ForwardActivityOptions = ForwardActivityOptions.new
     ) : Array(SentActivity)
       forward_activity(identifier_from_username(forwarder[:username]), actor, activity, options)
     end

@@ -26,5 +26,4 @@ module Aptork
       },
     ])
   end
-
 end

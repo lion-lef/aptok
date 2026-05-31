@@ -276,5 +276,4 @@ module Aptork
       self
     end
   end
-
 end

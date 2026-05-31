@@ -1,7 +1,5 @@
 module Aptork
-
   class Router
-
     private def outbox_activity_response(result : RouteOutboxActivityResult) : Response
       case result
       when .error?

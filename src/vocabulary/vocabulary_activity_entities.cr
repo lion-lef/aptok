@@ -276,7 +276,5 @@ module Aptork
         new(value)
       end
     end
-
-
   end
 end

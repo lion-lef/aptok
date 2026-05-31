@@ -45,7 +45,7 @@ end
 def activitypub_get(
   path : String,
   query : Hash(String, String) = Hash(String, String).new,
-  headers : Hash(String, String) = Hash(String, String).new,
+  headers : Hash(String, String) = Hash(String, String).new
 ) : Aptork::Request
   Aptork::Request.new("GET", path, query: query, headers: activitypub_headers(headers))
 end

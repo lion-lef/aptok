@@ -181,7 +181,7 @@ module Aptork
       verification_method : String,
       loader : DocumentLoader,
       cache : KvStore? = nil,
-      options : ProofKeyLookupOptions = ProofKeyLookupOptions.new,
+      options : ProofKeyLookupOptions = ProofKeyLookupOptions.new
     ) : ActorKeyPair?
       cached = cached_proof_key(verification_method, cache)
       return cached if cached
@@ -202,7 +202,7 @@ module Aptork
       object_or_id : JSON::Any,
       loader : DocumentLoader,
       parent_origin : String? = nil,
-      options : LookupObjectOptions = LookupObjectOptions.new,
+      options : LookupObjectOptions = LookupObjectOptions.new
     ) : JsonMap?
       if object = object_or_id.as_h?
         return object if parent_origin.nil? || object_origin(object_or_id) == parent_origin

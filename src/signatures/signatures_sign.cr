@@ -1,5 +1,4 @@
 module Aptork
-
   module Signatures
     def self.verify_rsa_sha256?(request : Request, key_pair : ActorKeyPair) : Bool
       verify_rsa_sha256_with_pem?(request, key_pair.public_key_pem)
@@ -264,6 +263,5 @@ module Aptork
       public_key.copy_to(prefixed + ED25519_MULTIKEY_PREFIX.size)
       multibase_base58btc(prefixed)
     end
-
   end
 end

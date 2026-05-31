@@ -1,13 +1,12 @@
 #!/bin/sh
 # Format check: verifies sources match `crystal tool format`.
 #
-# NOTE on Crystal versions: the formatter's output changed across releases
-# (for example, trailing commas in multi-line argument lists are kept by
-# Crystal >= 1.12 but stripped by older versions). shard.yml pins
-# `crystal >= 1.12.0`, so this check is authoritative only on a matching
-# toolchain. To avoid spurious failures for contributors on an older compiler,
-# a formatting difference is a *warning* by default; set APTORK_STRICT_FORMAT=1
-# (as CI does) to make it a hard failure.
+# NOTE on Crystal versions: the sources are formatted clean on both Crystal
+# 1.11.x and the pinned 1.12.2 (the version CI uses), so this check passes on
+# either. The formatter's output can still drift between releases, so to avoid
+# spurious failures on an unexpected toolchain a formatting difference is a
+# *warning* by default; set APTORK_STRICT_FORMAT=1 (as CI does) to make it a
+# hard failure.
 set -eu
 
 . "$(dirname -- "$0")/lib.sh"

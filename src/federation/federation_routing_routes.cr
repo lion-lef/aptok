@@ -184,7 +184,7 @@ module Aptork
       ctx : Context,
       request : Request,
       identifier : String?,
-      params : Hash(String, String),
+      params : Hash(String, String)
     ) : Bool
       return true unless authorizer
       authorizer.call(ctx, request, verify_signed_request(request), identifier, params)

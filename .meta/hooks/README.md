@@ -35,10 +35,11 @@ ln -s ../../.meta/hooks/check-all.sh .git/hooks/pre-push
 
 ## Note on Crystal versions and formatting
 
-`shard.yml` pins `crystal >= 1.12.0`. The formatter's output changed across
-releases (e.g. trailing commas in multi-line argument lists are kept by Crystal
-`>= 1.12` but stripped by older compilers). To avoid spurious formatting
-failures for contributors on an older toolchain, `check-format.sh` only *warns*
-on a difference unless `APTORK_STRICT_FORMAT=1` is set. CI sets it, so format is
-still enforced on the supported compiler. Build and spec checks are always hard
-failures regardless of compiler version.
+`shard.yml` pins `crystal >= 1.12.0`. The sources are formatted with
+`crystal tool format` and verified clean on both Crystal 1.11.x and the pinned
+1.12.2 (the version CI uses), so the check passes regardless of which of those
+compilers a contributor runs. The formatter's output can nonetheless drift
+between releases, so to avoid spurious failures on an unexpected toolchain
+`check-format.sh` only *warns* on a difference unless `APTORK_STRICT_FORMAT=1`
+is set. CI sets it, so format is still enforced on the supported compiler.
+Build and spec checks are always hard failures regardless of compiler version.

@@ -5,7 +5,7 @@ module Aptork
       recipients : Array(Recipient),
       activity : JsonMap,
       collection_name : String? = nil,
-      sync_collection : Bool = false,
+      sync_collection : Bool = false
     ) : Array(SentActivity)
       sender = get_actor_uri(sender_identifier)
       signing_key_pair = first_rsa_key_pair(sender_identifier)
@@ -38,7 +38,7 @@ module Aptork
       sender_identifier : String,
       recipient : Recipient,
       activity : JsonMap,
-      options : SendActivityOptions = SendActivityOptions.new,
+      options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
       send_activity(sender_identifier, [recipient], activity, options)
     end
@@ -47,7 +47,7 @@ module Aptork
       sender_key_pair : ActorKeyPair,
       recipient : Recipient,
       activity : JsonMap,
-      options : SendActivityOptions = SendActivityOptions.new,
+      options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
       send_activity([sender_key_pair], [recipient], activity, options)
     end
@@ -56,7 +56,7 @@ module Aptork
       sender_key_pairs : Array(ActorKeyPair),
       recipient : Recipient,
       activity : JsonMap,
-      options : SendActivityOptions = SendActivityOptions.new,
+      options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
       send_activity(sender_key_pairs, [recipient], activity, options)
     end
@@ -65,7 +65,7 @@ module Aptork
       sender_identifier : String,
       recipients : Array(Recipient),
       activity : JsonMap,
-      options : SendActivityOptions,
+      options : SendActivityOptions
     ) : SendActivityResult
       recipients = direct_recipients_for_delivery(recipients, options)
       send_activity_to_recipients(sender_identifier, recipients, activity, nil, options)
@@ -75,7 +75,7 @@ module Aptork
       sender_key_pair : ActorKeyPair,
       recipients : Array(Recipient),
       activity : JsonMap,
-      options : SendActivityOptions = SendActivityOptions.new,
+      options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
       send_activity([sender_key_pair], recipients, activity, options)
     end
@@ -84,7 +84,7 @@ module Aptork
       sender_key_pairs : Array(ActorKeyPair),
       recipients : Array(Recipient),
       activity : JsonMap,
-      options : SendActivityOptions = SendActivityOptions.new,
+      options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
       recipients = direct_recipients_for_delivery(recipients, options)
       send_activity_with_key_pairs(sender_key_pairs, recipients, activity, options)
@@ -94,7 +94,7 @@ module Aptork
       sender_key_pair : ActorKeyPair,
       actor : Vocab::Actor,
       activity : JsonMap,
-      options : SendActivityOptions = SendActivityOptions.new,
+      options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
       send_activity([sender_key_pair], actor, activity, options)
     end
@@ -103,7 +103,7 @@ module Aptork
       sender_key_pairs : Array(ActorKeyPair),
       actor : Vocab::Actor,
       activity : JsonMap,
-      options : SendActivityOptions = SendActivityOptions.new,
+      options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
       recipient = Aptork.recipient_from_actor(actor, options.prefer_shared_inbox)
       recipients = recipient ? [recipient] : [] of Recipient
@@ -114,7 +114,7 @@ module Aptork
       sender_key_pair : ActorKeyPair,
       actor : JsonMap,
       activity : JsonMap,
-      options : SendActivityOptions = SendActivityOptions.new,
+      options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
       send_activity([sender_key_pair], actor, activity, options)
     end
@@ -123,7 +123,7 @@ module Aptork
       sender_key_pairs : Array(ActorKeyPair),
       actor : JsonMap,
       activity : JsonMap,
-      options : SendActivityOptions = SendActivityOptions.new,
+      options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
       recipient = Aptork.recipient_from_actor(actor, options.prefer_shared_inbox)
       recipients = recipient ? [recipient] : [] of Recipient
@@ -134,7 +134,7 @@ module Aptork
       sender_key_pair : ActorKeyPair,
       actors : Array(Vocab::Actor),
       activity : JsonMap,
-      options : SendActivityOptions = SendActivityOptions.new,
+      options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
       send_activity([sender_key_pair], actors, activity, options)
     end
@@ -143,7 +143,7 @@ module Aptork
       sender_key_pairs : Array(ActorKeyPair),
       actors : Array(Vocab::Actor),
       activity : JsonMap,
-      options : SendActivityOptions = SendActivityOptions.new,
+      options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
       recipients = actors.compact_map { |actor| Aptork.recipient_from_actor(actor, options.prefer_shared_inbox) }
       send_activity_with_key_pairs(sender_key_pairs, recipients, activity, options)
@@ -153,7 +153,7 @@ module Aptork
       sender_key_pair : ActorKeyPair,
       actors : Array(JsonMap),
       activity : JsonMap,
-      options : SendActivityOptions = SendActivityOptions.new,
+      options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
       send_activity([sender_key_pair], actors, activity, options)
     end
@@ -162,7 +162,7 @@ module Aptork
       sender_key_pairs : Array(ActorKeyPair),
       actors : Array(JsonMap),
       activity : JsonMap,
-      options : SendActivityOptions = SendActivityOptions.new,
+      options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
       recipients = actors.compact_map { |actor| Aptork.recipient_from_actor(actor, options.prefer_shared_inbox) }
       send_activity_with_key_pairs(sender_key_pairs, recipients, activity, options)
@@ -172,7 +172,7 @@ module Aptork
       sender_identifier : String,
       actor : Vocab::Actor,
       activity : JsonMap,
-      options : SendActivityOptions = SendActivityOptions.new,
+      options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
       recipient = Aptork.recipient_from_actor(actor, options.prefer_shared_inbox)
       recipients = recipient ? [recipient] : [] of Recipient
@@ -183,7 +183,7 @@ module Aptork
       sender_identifier : String,
       actor : JsonMap,
       activity : JsonMap,
-      options : SendActivityOptions = SendActivityOptions.new,
+      options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
       recipient = Aptork.recipient_from_actor(actor, options.prefer_shared_inbox)
       recipients = recipient ? [recipient] : [] of Recipient
@@ -194,7 +194,7 @@ module Aptork
       sender_identifier : String,
       actors : Array(Vocab::Actor),
       activity : JsonMap,
-      options : SendActivityOptions = SendActivityOptions.new,
+      options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
       recipients = actors.compact_map { |actor| Aptork.recipient_from_actor(actor, options.prefer_shared_inbox) }
       send_activity_to_recipients(sender_identifier, recipients, activity, nil, options)
@@ -204,7 +204,7 @@ module Aptork
       sender_identifier : String,
       actors : Array(JsonMap),
       activity : JsonMap,
-      options : SendActivityOptions = SendActivityOptions.new,
+      options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
       recipients = actors.compact_map { |actor| Aptork.recipient_from_actor(actor, options.prefer_shared_inbox) }
       send_activity_to_recipients(sender_identifier, recipients, activity, nil, options)
@@ -214,7 +214,7 @@ module Aptork
       sender_identifier : String,
       collection_name : String,
       activity : JsonMap,
-      options : SendActivityOptions = SendActivityOptions.new,
+      options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
       recipients = recipients_from_collection(sender_identifier, collection_name, options)
       send_activity_to_recipients(sender_identifier, recipients, activity, collection_name, options)
@@ -225,7 +225,7 @@ module Aptork
       recipients : Array(Recipient),
       activity : JsonMap,
       collection_name : String? = nil,
-      sync_collection : Bool = false,
+      sync_collection : Bool = false
     ) : Array(SentActivity)
       send_activity(sender[:identifier], recipients, activity, collection_name, sync_collection)
     end
@@ -235,7 +235,7 @@ module Aptork
       recipients : Array(Recipient),
       activity : JsonMap,
       collection_name : String? = nil,
-      sync_collection : Bool = false,
+      sync_collection : Bool = false
     ) : Array(SentActivity)
       send_activity(identifier_from_username(sender[:username]), recipients, activity, collection_name, sync_collection)
     end
@@ -244,7 +244,7 @@ module Aptork
       sender : NamedTuple(identifier: String),
       recipient : Recipient,
       activity : JsonMap,
-      options : SendActivityOptions = SendActivityOptions.new,
+      options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
       send_activity(sender[:identifier], recipient, activity, options)
     end
@@ -253,7 +253,7 @@ module Aptork
       sender : NamedTuple(username: String),
       recipient : Recipient,
       activity : JsonMap,
-      options : SendActivityOptions = SendActivityOptions.new,
+      options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
       send_activity(identifier_from_username(sender[:username]), recipient, activity, options)
     end
@@ -262,7 +262,7 @@ module Aptork
       sender : NamedTuple(identifier: String),
       recipients : Array(Recipient),
       activity : JsonMap,
-      options : SendActivityOptions,
+      options : SendActivityOptions
     ) : SendActivityResult
       send_activity(sender[:identifier], recipients, activity, options)
     end
@@ -271,7 +271,7 @@ module Aptork
       sender : NamedTuple(username: String),
       recipients : Array(Recipient),
       activity : JsonMap,
-      options : SendActivityOptions,
+      options : SendActivityOptions
     ) : SendActivityResult
       send_activity(identifier_from_username(sender[:username]), recipients, activity, options)
     end
@@ -280,7 +280,7 @@ module Aptork
       sender : NamedTuple(identifier: String),
       actor : Vocab::Actor,
       activity : JsonMap,
-      options : SendActivityOptions = SendActivityOptions.new,
+      options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
       send_activity(sender[:identifier], actor, activity, options)
     end

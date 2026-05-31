@@ -1,7 +1,5 @@
 module Aptork
-
   module Signatures
-
     private def self.format_component_identifier(component : String) : String
       pieces = component.split(";", 2)
       name = pieces[0]

@@ -6,7 +6,6 @@ require "../discovery/discovery"
 require "../uri_template"
 
 module Aptork
-
   ACTIVITYPUB_ACCEPT_TYPES = [
     "application/activity+json",
     "application/ld+json",

@@ -1,6 +1,5 @@
 module Aptork
   module Vocab
-
     class MarketplaceObject < Object
       getter name : String?
 
@@ -158,6 +157,5 @@ module Aptork
         @to = self.class.string_array_property(json, "to")
       end
     end
-
   end
 end

@@ -98,5 +98,4 @@ module Aptork
     ancestors << "Activity" if ACTIVITY_TYPES.includes?(name)
     ([name] + ancestors).uniq
   end
-
 end

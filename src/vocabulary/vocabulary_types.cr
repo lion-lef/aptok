@@ -24,6 +24,7 @@ module Aptork
   FORGEFED_CONTEXT = "https://forgefed.org/ns"
   FORGEFED_TYPES   = %w[
     Repository Ticket MergeRequest Commit Branch Tag Push Project TicketTracker PatchTracker
+    TicketDependency
   ]
   FORGEFED_ACTIVITY_TYPES = %w[
     Resolve Apply Grant Revoke
@@ -87,6 +88,8 @@ module Aptork
                   ["Ignore"]
                 when .in?("Repository", "Branch", "Commit", "Push", "Ticket", "MergeRequest")
                   ["ForgeFedObject"]
+                when "TicketDependency"
+                  ["Relationship"]
                 when .in?("Resolve", "Apply", "Grant", "Revoke")
                   ["ForgeFedActivity"]
                 when .in?("Offer", "Product", "PriceSpecification", "Listing", "Intent", "Measure", "Proposal", "Commitment", "Agreement")

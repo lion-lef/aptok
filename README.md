@@ -26,7 +26,7 @@ framework surface for building federated apps:
 - testing capture helpers,
 - injectable HTTP/signature hooks for tests,
 - ForgeFed repository, project, branch, commit, tag, push, ticket, tracker,
-  merge request, typed activity, and strict validation helpers,
+  ticket dependency, merge request, typed activity, and strict validation helpers,
 - marketplace offer/service/listing and FEP-0837 proposal/agreement builder and
   validation helpers,
 - a [`FEDERATION.md`](FEDERATION.md) (FEP-67ff) describing the implementation.
@@ -2639,13 +2639,21 @@ patches = Aptork.forgefed_patch_tracker(
 ForgeFed task handoff can be built with `forgefed_ticket`:
 
 ```crystal
+dependency = Aptork.forgefed_ticket_dependency(
+  "https://example.com/ticket-deps/1",
+  "https://example.com/tickets/1",
+  "https://example.com/tickets/0",
+  attributed_to: "https://example.com/users/alice",
+  summary: "Delivery bug depends on the tracked regression"
+)
+
 ticket = Aptork.forgefed_ticket(
   "https://example.com/tickets/1",
   "Fix federation delivery",
   "Inbox delivery fails on 410 responses",
   assignee: "https://remote.example/users/maintainer",
   attributed_to: "https://example.com/users/alice",
-  depends_on: ["https://example.com/tickets/0"]
+  depends_on: [dependency]
 )
 
 activity = Aptork.create(

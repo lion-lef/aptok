@@ -48,6 +48,28 @@ module Aptork
       end
     end
 
+    class TicketDependency < Relationship
+      getter subject : Object | String | Nil
+      getter relationship : String?
+      getter object : Object | String | Nil
+
+      def self.from_json_ld(value : JSON::Any) : TicketDependency
+        from_json_ld(json_object(value))
+      end
+
+      def self.from_json_ld(value : JsonMap) : TicketDependency
+        new(value)
+      end
+
+      def initialize(json : JsonMap)
+        super(json)
+        @type = "TicketDependency"
+        @subject = self.class.object_property(json, "subject")
+        @relationship = self.class.string_property(json, "relationship")
+        @object = self.class.object_property(json, "object")
+      end
+    end
+
     class Push < ForgeFedObject
       getter actor : String?
       getter attributed_to : String?

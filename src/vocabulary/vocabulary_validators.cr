@@ -78,6 +78,19 @@ module Aptork
       validate_optional_object_or_link_array_property(document, "dependsOn", errors)
       validate_optional_object_or_link_array_property(document, "dependants", errors)
       validate_optional_string_property(document, "mrDiff", errors)
+    when "TicketDependency"
+      validate_optional_string_property(document, "id", errors)
+      validate_optional_string_property(document, "attributedTo", errors)
+      validate_optional_string_property(document, "summary", errors)
+      validate_optional_string_property(document, "published", errors)
+      require_object_or_link_property(document, "subject", errors)
+      require_object_or_link_property(document, "object", errors)
+      relationship = validation_string_property(document, "relationship")
+      if relationship.nil? || relationship.empty?
+        errors << "relationship is required"
+      elsif relationship != "dependsOn"
+        errors << "relationship must be dependsOn"
+      end
     when "Tag"
       require_string_property(document, "id", errors)
       require_string_property(document, "name", errors)
@@ -290,7 +303,23 @@ module Aptork
   end
 
   private def self.validation_type(document : JsonMap) : String?
-    validation_string_property(document, "type").try { |type| type_name(type) }
+    names = validation_type_names(document)
+    names.find do |type|
+      FORGEFED_TYPES.includes?(type) ||
+        FORGEFED_ACTIVITY_TYPES.includes?(type) ||
+        MARKETPLACE_TYPES.includes?(type)
+    end || names.first?
+  end
+
+  private def self.validation_type_names(document : JsonMap) : Array(String)
+    property = document["type"]?
+    return [] of String unless property
+
+    if string = property.as_s?
+      [type_name(string)]
+    else
+      property.as_a?.try(&.compact_map { |item| item.as_s?.try { |type| type_name(type) } }) || [] of String
+    end
   end
 
   private def self.validation_string_property(document : JsonMap, key : String) : String?

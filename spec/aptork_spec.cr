@@ -9117,6 +9117,41 @@ describe "Aptork vocabulary helpers" do
     parsed_ticket.dependants.should eq(["https://local.example/tickets/2"])
   end
 
+  it "builds ForgeFed TicketDependency relationship objects" do
+    dependency = Aptork.forgefed_ticket_dependency(
+      "https://local.example/ticket-deps/1",
+      "https://local.example/tickets/1",
+      "https://remote.example/tickets/2",
+      attributed_to: "https://local.example/users/alice",
+      summary: "Bug depends on upstream fix",
+      published: "2026-05-31T00:00:00Z"
+    )
+
+    dependency["@context"].as_a.includes?(Aptork.json(Aptork::FORGEFED_CONTEXT)).should be_true
+    dependency["type"].as_a.map(&.as_s).should eq(["Relationship", "TicketDependency"])
+    dependency["subject"].as_s.should eq("https://local.example/tickets/1")
+    dependency["relationship"].as_s.should eq("dependsOn")
+    dependency["object"].as_s.should eq("https://remote.example/tickets/2")
+
+    parsed = Aptork::Vocab::Object.from_json_ld(dependency)
+    parsed.should be_a(Aptork::Vocab::TicketDependency)
+    typed_dependency = parsed.as(Aptork::Vocab::TicketDependency)
+    typed_dependency.id.should eq("https://local.example/ticket-deps/1")
+    typed_dependency.type.should eq("TicketDependency")
+    typed_dependency.subject.should eq("https://local.example/tickets/1")
+    typed_dependency.relationship.should eq("dependsOn")
+    typed_dependency.object.should eq("https://remote.example/tickets/2")
+    Aptork::Vocab::Relationship.from_json_ld(dependency).should be_a(Aptork::Vocab::TicketDependency)
+    Aptork::Vocab::TicketDependency.type_id.should eq("#{Aptork::FORGEFED_CONTEXT}#TicketDependency")
+    Aptork.type_lineage("TicketDependency").should contain("Relationship")
+    Aptork.valid_forgefed?(dependency).should be_true
+
+    invalid_dependency = dependency.dup
+    invalid_dependency["relationship"] = Aptork.json("blocks")
+    Aptork.valid_forgefed?(invalid_dependency).should be_false
+    Aptork.forgefed_validation_errors(invalid_dependency).should contain("relationship must be dependsOn")
+  end
+
   it "builds ForgeFed typed ticket, patch, and access activities" do
     ticket = Aptork.forgefed_ticket(
       "https://local.example/tickets/1",

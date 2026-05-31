@@ -14,7 +14,10 @@ module Aptork
       end
 
       def self.from_json_ld(value : JsonMap) : Object
-        type = string_property(value, "type").try { |value| Aptork.type_name(value) }
+        types = type_names(value)
+        return TicketDependency.from_json_ld(value) if types.includes?("TicketDependency")
+
+        type = types.first?
         case type
         when "Create"
           Create.from_json_ld(value)
@@ -185,6 +188,17 @@ module Aptork
       protected def self.string_property(value : JsonMap, key : String) : String?
         property = value[key]?
         property.try(&.as_s?) || property.try(&.as_a?).try(&.first?.try(&.as_s?))
+      end
+
+      protected def self.type_names(value : JsonMap) : Array(String)
+        property = value["type"]?
+        return [] of String unless property
+
+        if string = property.as_s?
+          [Aptork.type_name(string)]
+        else
+          property.as_a?.try(&.compact_map { |item| item.as_s?.try { |type| Aptork.type_name(type) } }) || [] of String
+        end
       end
 
       protected def self.string_array_property(value : JsonMap, key : String) : Array(String)

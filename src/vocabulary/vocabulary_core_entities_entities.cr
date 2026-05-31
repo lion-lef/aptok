@@ -191,7 +191,19 @@ module Aptork
     object_type Page, Document
     object_type Place, StandardObject
     object_type Profile, StandardObject
-    object_type Relationship, StandardObject
+
+    class Relationship < StandardObject
+      def self.from_json_ld(value : JSON::Any) : Relationship
+        from_json_ld(json_object(value))
+      end
+
+      def self.from_json_ld(value : JsonMap) : Relationship
+        return TicketDependency.from_json_ld(value) if type_names(value).includes?("TicketDependency")
+
+        new(value)
+      end
+    end
+
     object_type Video, Document
   end
 end

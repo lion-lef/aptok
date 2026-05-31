@@ -88,7 +88,8 @@ The columns mean:
 
 This section maps Aptork against the [ForgeFed vocabulary spec][forgefed-vocab].
 Builders live in `src/vocabulary/vocabulary_forgefed*`; round-trip
-`from_json_ld` parsers exist for the trackers/tickets/pushes.
+`from_json_ld` parsers exist for the trackers, tickets, ticket dependencies,
+and pushes.
 
 [forgefed-vocab]: https://forgefed.org/vocabulary.html
 
@@ -105,7 +106,7 @@ Builders live in `src/vocabulary/vocabulary_forgefed*`; round-trip
 | Ticket | ✅ `Aptork.forgefed_ticket` | `isResolved` round-trips. |
 | TicketTracker | ✅ `Aptork.forgefed_ticket_tracker` | |
 | PatchTracker | ✅ `Aptork.forgefed_patch_tracker` | |
-| TicketDependency | 🟡 | `dependsOn`/`dependants` round-trip through typed accessors; no dedicated dependency object helper. |
+| TicketDependency | ✅ `Aptork.forgefed_ticket_dependency` | Builds and parses the `Relationship`/`TicketDependency` object with `subject`, `relationship: "dependsOn"`, and `object`. |
 | Patch / Diff | ❌ | No dedicated helper; model patches via generic objects. |
 
 ### Activity / interaction types
@@ -125,7 +126,7 @@ Builders live in `src/vocabulary/vocabulary_forgefed*`; round-trip
 | ForgeFed `@context` injection | ✅ | Attached by every `forgefed_*` builder. |
 | `committedBy` / `hash` / `committed` | ✅ | On `forgefed_commit`. |
 | `isResolved` | ✅ | On `forgefed_ticket`. |
-| `dependsOn` / `dependants` typed accessors | ✅ | On `Ticket`. |
+| `dependsOn` / `dependants` typed accessors | ✅ | On `Ticket`; values can be links or typed dependency objects. |
 | `filesAdded` / `filesModified` / `filesRemoved` | ✅ | On `Commit`; builders accept file-list arrays. |
 | Strict validation | ✅ | `valid_forgefed?`, `validate_forgefed!`, and validation error helpers. |
 

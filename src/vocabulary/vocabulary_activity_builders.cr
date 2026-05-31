@@ -174,6 +174,27 @@ module Aptork
     Aptork.object("Ticket", id, properties)
   end
 
+  def self.forgefed_ticket_dependency(
+    id : String,
+    subject : JsonMap | String,
+    object : JsonMap | String,
+    attributed_to : String? = nil,
+    summary : String? = nil,
+    published : String? = nil
+  ) : JsonMap
+    properties = JsonMap{
+      "@context"     => json([ACTIVITYSTREAMS_CONTEXT, FORGEFED_CONTEXT]),
+      "type"         => json(["Relationship", "TicketDependency"]),
+      "subject"      => json(subject),
+      "relationship" => json("dependsOn"),
+      "object"       => json(object),
+      "published"    => json(published || now),
+    }
+    properties["attributedTo"] = json(attributed_to) if attributed_to && !attributed_to.empty?
+    properties["summary"] = json(summary) if summary && !summary.empty?
+    Aptork.object("Relationship", id, properties)
+  end
+
   def self.forgefed_activity(
     type : String,
     id : String,

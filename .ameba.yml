@@ -1,0 +1,66 @@
+# Project-specific Ameba configuration, based on the Crystal shards template:
+# https://raw.githubusercontent.com/crystal-lang/shards/refs/heads/master/.ameba.yml
+#
+# Aptork keeps `crystal tool format --check`, build, and spec execution as
+# separate CI steps. Ameba is configured here as a focused static-analysis pass
+# for the library and default specs.
+
+Version: "1.7.0-dev"
+
+Excluded:
+  - lib/**
+  - bin/**
+  - experiments/**
+
+# Documentation
+# =========================
+
+# Existing TODO/FIXME comments are tracked through issues and PRs.
+Documentation/DocumentationAdmonition:
+  Enabled: false
+
+# Lint
+# =========================
+
+# Formatting is already enforced by `.meta/hooks/check-format.sh` in CI.
+Lint/Formatting:
+  Enabled: false
+
+# Aptork has several JSON-LD and test helper paths where `not_nil!` follows an
+# explicit protocol guard; auditing them is useful, but not as a default lint.
+Lint/NotNil:
+  Enabled: false
+
+# Specs intentionally close over booleans and contexts in nested route/listener
+# callbacks to assert side effects.
+Lint/ShadowingOuterLocalVar:
+  Enabled: false
+
+# Metrics
+# =========================
+
+# Federation routing and protocol parsing branches mirror ActivityPub,
+# WebFinger, NodeInfo, HTTP signature, and SQL-wire behavior.
+Metrics/CyclomaticComplexity:
+  Enabled: false
+
+# Naming
+# =========================
+
+# Public names follow ActivityPub, NodeInfo, ForgeFed, HTTP signature, and SQL
+# vocabulary terms even when those names are not idiomatic Crystal identifiers.
+Naming/MethodNames:
+  Enabled: false
+
+Naming/PredicateName:
+  Enabled: false
+
+Naming/VariableNames:
+  Enabled: false
+
+# Style
+# =========================
+
+# Guard-clause returns keep request routing and parser exits readable.
+Style/RedundantReturn:
+  Enabled: false

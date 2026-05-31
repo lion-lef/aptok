@@ -109,6 +109,30 @@ federation = Aptork::Federation.build("https://example.com") do |builder|
 end
 ```
 
+`Aptork.federation` wraps the builder with a Crystal-style DSL. The block uses
+the DSL object as its implicit receiver, while still accepting an explicit block
+argument when preferred:
+
+```crystal
+federation = Aptork.federation("https://example.com") do
+  actor "/users/{identifier}", ->(ctx : Aptork::Context, identifier : String) do
+    Aptork.actor(
+      "Person",
+      ctx.get_actor_uri(identifier),
+      identifier,
+      ctx.get_inbox_uri(identifier),
+      ctx.get_outbox_uri(identifier)
+    ).as(Aptork::JsonMap?)
+  end
+
+  inbox "/users/{identifier}/inbox", "/inbox" do |routes|
+    routes.on "Create", ->(_ctx : Aptork::Context, activity : Aptork::JsonMap) do
+      puts activity["id"]?
+    end
+  end
+end
+```
+
 ## Request Handling
 
 `Federation#handle` provides a small framework-neutral adapter target. Web
@@ -2833,6 +2857,7 @@ formatting, a type-checking build, and the full `crystal spec` suite:
 ```sh
 .meta/hooks/check-all.sh                      # format (warn) + build + spec
 APTORK_STRICT_FORMAT=1 .meta/hooks/check-all.sh  # also enforce formatting (CI)
+ameba                                          # optional static analysis
 ```
 
 See [`.meta/hooks/README.md`](.meta/hooks/README.md) for details and how to wire

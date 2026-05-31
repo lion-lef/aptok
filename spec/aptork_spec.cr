@@ -692,6 +692,85 @@ describe Aptork::Federation do
     queue.depth("outbox").should eq(1)
   end
 
+  it "builds a federation through the Crystal-style DSL" do
+    inbox_handled = false
+    outbox_handled = false
+
+    federation = Aptork.federation("https://local.example") do
+      actor "/users/{identifier}", ->(ctx : Aptork::Context, identifier : String) do
+        Aptork.actor(
+          "Person",
+          ctx.get_actor_uri(identifier),
+          identifier,
+          ctx.get_inbox_uri(identifier),
+          ctx.get_outbox_uri(identifier)
+        ).as(Aptork::JsonMap?)
+      end
+
+      object "Note", "/users/{identifier}/notes/{note_id}", ->(ctx : Aptork::Context, params : Hash(String, String)) do
+        Aptork.note(ctx.get_object_uri("Note", params), "Hello").as(Aptork::JsonMap?)
+      end
+
+      collection "stars", "/users/{identifier}/stars", ->(_ctx : Aptork::Context, _params : Hash(String, String), cursor : String?, _size : Int32) do
+        if cursor
+          Aptork::CollectionPageResult.new([Aptork.actor("Person", "https://remote.example/users/bob", "bob", "https://remote.example/users/bob/inbox", "https://remote.example/users/bob/outbox")]).as(Aptork::CollectionPageResult?)
+        else
+          Aptork::CollectionPageResult.new([] of Aptork::JsonMap, "start").as(Aptork::CollectionPageResult?)
+        end
+      end
+
+      collection "stars" do |stars|
+        stars.item_type "Person"
+        stars.set_counter(->(_ctx : Aptork::Context, _params : Hash(String, String)) { 1.as(Int32?) })
+      end
+
+      inbox "/users/{identifier}/inbox", "/inbox" do |routes|
+        routes.on "Create", ->(_ctx : Aptork::Context, _activity : Aptork::JsonMap) do
+          inbox_handled = true
+          nil
+        end
+      end
+
+      outbox "/users/{identifier}/outbox" do |routes|
+        routes.on "Create", ->(_ctx : Aptork::Context, _activity : Aptork::JsonMap) do
+          outbox_handled = true
+          nil
+        end
+      end
+    end
+
+    ctx = federation.create_context
+    activity = Aptork.create(
+      "https://local.example/activities/1",
+      ctx.get_actor_uri("alice"),
+      Aptork.note("https://local.example/notes/1", "Hello")
+    )
+
+    ctx.actor("alice").not_nil!["id"].as_s.should eq("https://local.example/users/alice")
+    federation.handle(activitypub_get("/users/alice/notes/1")).status.should eq(200)
+    stars = federation.handle(activitypub_get("/users/alice/stars"))
+    stars.status.should eq(200)
+    JSON.parse(stars.body).as_h["itemType"].as_s.should eq("Person")
+    JSON.parse(stars.body).as_h["totalItems"].as_i.should eq(1)
+    federation.handle(Aptork::Request.new("POST", "/users/alice/inbox", body: activity.to_json)).status.should eq(202)
+    federation.handle(Aptork::Request.new("POST", "/users/alice/outbox", body: activity.to_json)).status.should eq(202)
+    inbox_handled.should be_true
+    outbox_handled.should be_true
+
+    explicit = Aptork.federation("https://explicit.example") do |dsl|
+      dsl.actor "/users/{identifier}", ->(actor_ctx : Aptork::Context, identifier : String) do
+        Aptork.actor(
+          "Person",
+          actor_ctx.get_actor_uri(identifier),
+          identifier,
+          actor_ctx.get_inbox_uri(identifier),
+          actor_ctx.get_outbox_uri(identifier)
+        ).as(Aptork::JsonMap?)
+      end
+    end
+    explicit.create_context.actor("alice").not_nil!["id"].as_s.should eq("https://explicit.example/users/alice")
+  end
+
   it "builds Fedify-style context URIs and dispatches actors" do
     federation = Aptork::Federation.create("https://local.example")
     federation.set_actor_dispatcher("/users/{identifier}", ->(ctx : Aptork::Context, identifier : String) do

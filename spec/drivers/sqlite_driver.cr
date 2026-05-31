@@ -1,4 +1,4 @@
-# Integration spec for the real SQLite FFI driver.
+# Integration spec for the crystal-sqlite3-backed SQLite driver.
 #
 # This file is intentionally **not** named `*_spec.cr`, so `crystal spec`
 # (which auto-discovers only `spec/**/*_spec.cr`) does not pick it up — the
@@ -13,7 +13,7 @@ require "../../src/store/sqlite"
 
 private def new_store
   conn = Aptork::SqliteConnection.open(":memory:")
-  {conn, Aptork::SqlKvStore.new(conn, dialect: Aptork::SqlDialect::Sqlite)}
+  {conn, Aptork::SqlKvStore.new(conn)}
 end
 
 describe Aptork::SqliteConnection do
@@ -56,7 +56,7 @@ describe Aptork::SqliteConnection do
 
   it "processes, retries, and dead-letters queue messages" do
     conn = Aptork::SqliteConnection.open(":memory:")
-    queue = Aptork::SqlMessageQueue.new(conn, dialect: Aptork::SqlDialect::Sqlite)
+    queue = Aptork::SqlMessageQueue.new(conn)
     queue.enqueue("outbox", Aptork.object("Note", "https://local.example/notes/1"))
     queue.enqueue("outbox", Aptork.object("Note", "https://local.example/notes/2"))
     queue.depth("outbox").should eq(2)

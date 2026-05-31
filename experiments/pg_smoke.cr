@@ -1,10 +1,11 @@
 require "../src/aptork"
+require "../src/store/postgres"
 
 url = "postgres://aptork:secretpw@127.0.0.1:55432/aptork_test"
 conn = Aptork::PostgresConnection.connect(url)
 puts "connected (SCRAM ok)"
 
-store = Aptork::SqlKvStore.new(conn, dialect: Aptork::SqlDialect::Postgres, table: "kv_smoke")
+store = Aptork::SqlKvStore.new(conn, table: "kv_smoke")
 store.set("actor:alice", "{\"name\":\"Alice\"}")
 puts "get => #{store.get("actor:alice").inspect}"
 puts "cas nil->v on existing => #{store.cas("actor:alice", nil, "X")}"
@@ -16,7 +17,7 @@ store.set("temp", "v", ttl: 10.milliseconds)
 sleep 30.milliseconds
 puts "temp expired => #{store.get("temp").inspect}"
 
-queue = Aptork::SqlMessageQueue.new(conn, dialect: Aptork::SqlDialect::Postgres, table: "q_smoke")
+queue = Aptork::SqlMessageQueue.new(conn, table: "q_smoke")
 queue.enqueue("inbox", Aptork::JsonMap{"a" => JSON::Any.new("1")})
 queue.enqueue("inbox", Aptork::JsonMap{"a" => JSON::Any.new("2")})
 puts "depth => #{queue.depth("inbox")}"

@@ -2276,19 +2276,22 @@ For durable, transactional persistence without an external broker, Aptork
 provides SQL-backed implementations of both the `KvStore` and `MessageQueue`
 interfaces. `SqlKvStore` and `SqlMessageQueue` work over any object that includes
 the `Aptork::SqlConnection` module; the bundled connections target SQLite and
-PostgreSQL, and the `SqlDialect` enum selects the right placeholder/upsert
-syntax. Both stores `migrate` their tables on construction by default.
+PostgreSQL through Crystal's `DB` ecosystem, and the connection supplies the
+right placeholder/upsert dialect by default. Both stores `migrate` their tables
+on construction by default.
 
-PostgreSQL is supported by `Aptork::PostgresConnection`, a **pure-Crystal** v3
-wire-protocol client (no `libpq` or external shard). It speaks the trust,
-cleartext, MD5, and SCRAM-SHA-256 auth methods and uses the extended query
-protocol, so it builds as part of the default toolkit:
+PostgreSQL is supported by `Aptork::PostgresConnection`, a thin adapter over
+`will/crystal-pg`. Pull it in explicitly when you need PostgreSQL-backed
+storage:
 
 ```crystal
+require "aptork"
+require "aptork/store/postgres"
+
 conn = Aptork::PostgresConnection.connect("postgres://user:pass@localhost:5432/aptork")
 
-store = Aptork::SqlKvStore.new(conn, dialect: Aptork::SqlDialect::Postgres)
-queue = Aptork::SqlMessageQueue.new(conn, dialect: Aptork::SqlDialect::Postgres)
+store = Aptork::SqlKvStore.new(conn)
+queue = Aptork::SqlMessageQueue.new(conn)
 
 federation = Aptork::Federation.create(
   "https://example.com",
@@ -2298,9 +2301,9 @@ federation = Aptork::Federation.create(
 )
 ```
 
-SQLite is supported by `Aptork::SqliteConnection`, a thin FFI binding over the
-system `libsqlite3`. Because it links a native library, it is **opt-in**: it is
-not pulled in by `require "aptork"`, so add it explicitly when you need it:
+SQLite is supported by `Aptork::SqliteConnection`, a thin adapter over
+`crystal-lang/crystal-sqlite3`. Because it links SQLite at compile time, it is
+also opt-in:
 
 ```crystal
 require "aptork"
@@ -2308,8 +2311,8 @@ require "aptork/store/sqlite"
 
 conn = Aptork::SqliteConnection.open("aptork.db") # or ":memory:"
 
-store = Aptork::SqlKvStore.new(conn, dialect: Aptork::SqlDialect::Sqlite)
-queue = Aptork::SqlMessageQueue.new(conn, dialect: Aptork::SqlDialect::Sqlite)
+store = Aptork::SqlKvStore.new(conn)
+queue = Aptork::SqlMessageQueue.new(conn)
 ```
 
 `SqlKvStore` supports `get`/`set` with TTL expiry, `delete`, prefix `list`, and

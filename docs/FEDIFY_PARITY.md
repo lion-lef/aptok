@@ -70,7 +70,7 @@ The columns mean:
 | Key-value store | ✅ | `MemoryKvStore`, `RedisKvStore`, `SqlKvStore` |
 | Message queue + retry | ✅ | `InProcessMessageQueue`, `RedisMessageQueue`, `SqlMessageQueue`, `QueueWorker` |
 | AMQP / RabbitMQ driver | ❌ | Redis is the only external broker. |
-| SQL stores (Postgres/SQLite) | ✅ | `SqlKvStore` + `SqlMessageQueue` over a `SqlConnection`; pure-Crystal `PostgresConnection` and opt-in `SqliteConnection` (FFI). MySQL not yet provided. |
+| SQL stores (Postgres/SQLite) | ✅ | `SqlKvStore` + `SqlMessageQueue` over a `SqlConnection`; `PostgresConnection` uses `will/crystal-pg`, and opt-in `SqliteConnection` uses `crystal-lang/crystal-sqlite3`. MySQL not yet provided. |
 | Telemetry / metrics hooks | ✅ | `MetricsTelemetry` aggregates counters/gauges/histograms/span timings and renders OpenMetrics / Prometheus text (`to_openmetrics`). |
 
 ## Developer tooling & integration
@@ -158,7 +158,8 @@ helpers before accepting remote documents.
 1. Linked Data Signatures (RsaSignature2017) for older fediverse software.
 2. An `aptork` CLI for fetching/inspecting objects and verifying signatures.
 3. An AMQP/RabbitMQ queue driver and a MySQL `SqlConnection` behind the existing
-   interfaces (SQLite and PostgreSQL `SqlConnection`s already ship).
+   interfaces (SQLite and PostgreSQL `SqlConnection`s already ship via Crystal
+   `DB` adapters).
 4. A full RFC 6570 URI Template implementation (the current `RouteTemplate` is a
    pragmatic subset — simple `{var}` and trailing `{+var}` operators).
 5. Dedicated ForgeFed `Patch`/`Diff` object helpers.

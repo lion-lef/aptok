@@ -3,7 +3,12 @@ require "random/secure"
 module Aptork
   # A value that can be bound to a SQL statement parameter or returned from a
   # query. Drivers return text/integer columns; `Nil` represents SQL `NULL`.
-  alias SqlValue = String | Int64 | Nil
+  alias SqlValue = String | Int32 | Int64 | Nil
+
+  enum SqlDialect
+    Sqlite
+    Postgres
+  end
 
   # Abstract execution surface that `SqlKvStore` and `SqlMessageQueue` depend on.
   #
@@ -12,24 +17,23 @@ module Aptork
   # calling the connection. Implementations only need to run an already
   # dialect-correct statement.
   #
-  # Two concrete drivers ship with Aptork:
+  # Two concrete adapters ship with Aptork:
   #
-  # - `Aptork::PostgresConnection` — a pure-Crystal PostgreSQL wire-protocol
-  #   client (no external shard required).
-  # - `Aptork::SqliteConnection` — a thin binding to the system `libsqlite3`,
+  # - `Aptork::PostgresConnection`, backed by `will/crystal-pg`, available via
+  #   `require "aptork/store/postgres"`.
+  # - `Aptork::SqliteConnection`, backed by `crystal-lang/crystal-sqlite3`,
   #   available via `require "aptork/store/sqlite"`.
   module SqlConnection
+    def dialect : SqlDialect
+      SqlDialect::Sqlite
+    end
+
     # Executes a statement that returns no rows and returns the number of rows
     # affected.
     abstract def execute(sql : String, args : Array(SqlValue)) : Int64
 
     # Executes a query and returns all result rows.
     abstract def query(sql : String, args : Array(SqlValue)) : Array(Array(SqlValue))
-  end
-
-  enum SqlDialect
-    Sqlite
-    Postgres
   end
 
   # Shared helpers for translating the `?`-placeholder statements used by the
@@ -57,6 +61,7 @@ module Aptork
     def self.to_i64?(value : SqlValue) : Int64?
       case value
       when Int64  then value
+      when Int32  then value.to_i64
       when String then value.to_i64?
       else             nil
       end
@@ -65,6 +70,7 @@ module Aptork
     def self.to_s?(value : SqlValue) : String?
       case value
       when String then value
+      when Int32  then value.to_s
       when Int64  then value.to_s
       else             nil
       end
@@ -78,14 +84,17 @@ module Aptork
   #
   # ```
   # conn = Aptork::SqliteConnection.open("federation.db")
-  # store = Aptork::SqlKvStore.new(conn, dialect: Aptork::SqlDialect::Sqlite)
+  # store = Aptork::SqlKvStore.new(conn)
   # store.set("actor:alice", "{...}")
   # store.get("actor:alice")
   # ```
   class SqlKvStore
     include KvStore
 
-    def initialize(@connection : SqlConnection, @dialect : SqlDialect = SqlDialect::Sqlite, @table : String = "aptork_kv", migrate : Bool = true)
+    @dialect : SqlDialect
+
+    def initialize(@connection : SqlConnection, dialect : SqlDialect? = nil, @table : String = "aptork_kv", migrate : Bool = true)
+      @dialect = dialect || @connection.dialect
       self.migrate if migrate
     end
 
@@ -224,7 +233,10 @@ module Aptork
     # order while staying unique across processes.
     @@sequence = Atomic(Int64).new(0_i64)
 
-    def initialize(@connection : SqlConnection, @dialect : SqlDialect = SqlDialect::Sqlite, @table : String = "aptork_queue", migrate : Bool = true)
+    @dialect : SqlDialect
+
+    def initialize(@connection : SqlConnection, dialect : SqlDialect? = nil, @table : String = "aptork_queue", migrate : Bool = true)
+      @dialect = dialect || @connection.dialect
       self.migrate if migrate
     end
 

@@ -1,5 +1,136 @@
 require "./spec_helper"
 
+# A dependency-free, in-memory `SqlConnection` used to exercise `SqlKvStore`
+# and `SqlMessageQueue` without a real database. It dispatches on the
+# `/* aptork:<marker> */` comment that the stores embed at the start of every
+# statement (real engines ignore the comment), so it tracks the stores'
+# control flow and bound parameters rather than parsing arbitrary SQL. The real
+# SQL is verified separately against SQLite in spec/drivers/sqlite_driver.cr.
+class FakeSqlConnection
+  include Aptork::SqlConnection
+
+  # key => {value, expires_at_ms}
+  @kv = Hash(String, Tuple(String, Int64?)).new
+  @queue = [] of Hash(String, Aptork::SqlValue)
+
+  def execute(sql : String, args : Array(Aptork::SqlValue)) : Int64
+    case marker(sql)
+    when "kv_migrate", "queue_migrate"
+      0_i64
+    when "kv_set"
+      key = str(args[0]); @kv[key] = {str(args[1]), i64?(args[2])}; 1_i64
+    when "kv_delete"
+      @kv.delete(str(args[0])) ? 1_i64 : 0_i64
+    when "kv_cas_insert"
+      key, value, expires, now = str(args[0]), str(args[1]), i64?(args[2]), i64(args[3])
+      existing = @kv[key]?
+      if existing.nil? || expired?(existing[1], now)
+        @kv[key] = {value, expires}; 1_i64
+      else
+        0_i64
+      end
+    when "kv_cas_update"
+      value, expires, key, expected, now = str(args[0]), i64?(args[1]), str(args[2]), str(args[3]), i64(args[4])
+      existing = @kv[key]?
+      if existing && existing[0] == expected && !expired?(existing[1], now)
+        @kv[key] = {value, expires}; 1_i64
+      else
+        0_i64
+      end
+    when "queue_insert"
+      @queue << {
+        "id"           => args[0],
+        "queue"        => args[1],
+        "payload"      => args[2],
+        "attempts"     => args[3],
+        "available_at" => args[4],
+        "ordering_key" => args[5],
+        "dead"         => args[6],
+      }
+      1_i64
+    when "queue_claim"
+      id = str(args[0])
+      before = @queue.size
+      @queue.reject! { |row| str(row["id"]) == id }
+      (before - @queue.size).to_i64
+    else
+      raise "FakeSqlConnection: unhandled execute marker #{marker(sql).inspect}"
+    end
+  end
+
+  def query(sql : String, args : Array(Aptork::SqlValue)) : Array(Array(Aptork::SqlValue))
+    case marker(sql)
+    when "kv_get"
+      row = @kv[str(args[0])]?
+      row ? [[row[0].as(Aptork::SqlValue), row[1].as(Aptork::SqlValue)]] : [] of Array(Aptork::SqlValue)
+    when "kv_list"
+      @kv.keys.sort!.map { |k| [k.as(Aptork::SqlValue), @kv[k][0].as(Aptork::SqlValue), @kv[k][1].as(Aptork::SqlValue)] }
+    when "kv_list_prefix"
+      prefix = unescape_like(str(args[0]))
+      @kv.keys.select(&.starts_with?(prefix)).sort!.map do |k|
+        [k.as(Aptork::SqlValue), @kv[k][0].as(Aptork::SqlValue), @kv[k][1].as(Aptork::SqlValue)]
+      end
+    when "queue_depth"
+      count = @queue.count { |r| str(r["queue"]) == str(args[0]) && i64(r["dead"]) == 0 }
+      [[count.to_i64.as(Aptork::SqlValue)]]
+    when "queue_ready_count"
+      now = i64(args[1])
+      count = @queue.count { |r| str(r["queue"]) == str(args[0]) && i64(r["dead"]) == 0 && i64(r["available_at"]) <= now }
+      [[count.to_i64.as(Aptork::SqlValue)]]
+    when "queue_ready"
+      ready_rows(str(args[0]), i64(args[1]), i64(args[2]).to_i)
+    when "queue_next"
+      ready_rows(str(args[0]), i64(args[1]), 1)
+    when "queue_dead"
+      queue = str(args[0])
+      sort_queue(@queue.select { |r| str(r["queue"]) == queue && i64(r["dead"]) == 1 }).map { |r| project(r) }
+    else
+      raise "FakeSqlConnection: unhandled query marker #{marker(sql).inspect}"
+    end
+  end
+
+  private def ready_rows(queue : String, now : Int64, limit : Int32) : Array(Array(Aptork::SqlValue))
+    rows = @queue.select { |r| str(r["queue"]) == queue && i64(r["dead"]) == 0 && i64(r["available_at"]) <= now }
+    sort_queue(rows).first(limit).map { |r| project(r) }
+  end
+
+  private def sort_queue(rows)
+    rows.sort_by { |r| {i64(r["available_at"]), str(r["id"])} }
+  end
+
+  private def project(row : Hash(String, Aptork::SqlValue)) : Array(Aptork::SqlValue)
+    ["id", "queue", "payload", "attempts", "available_at", "ordering_key"].map { |c| row[c] }
+  end
+
+  private def marker(sql : String) : String
+    if match = sql.match(/aptork:(\w+)/)
+      match[1]
+    else
+      raise "FakeSqlConnection: no marker in #{sql.inspect}"
+    end
+  end
+
+  private def expired?(expires_at : Int64?, now : Int64) : Bool
+    !!(expires_at && now >= expires_at)
+  end
+
+  private def unescape_like(pattern : String) : String
+    pattern.rchop('%').gsub("\\%", "%").gsub("\\_", "_").gsub("\\\\", "\\")
+  end
+
+  private def str(value : Aptork::SqlValue) : String
+    value.as(String)
+  end
+
+  private def i64(value : Aptork::SqlValue) : Int64
+    Aptork::SqlStatements.to_i64?(value).not_nil!
+  end
+
+  private def i64?(value : Aptork::SqlValue) : Int64?
+    Aptork::SqlStatements.to_i64?(value)
+  end
+end
+
 class RecordingTelemetry < Aptork::Telemetry
   getter spans = [] of String
   getter counters = [] of String
@@ -9922,6 +10053,166 @@ describe "Aptork storage and queue helpers" do
     second.should eq(Aptork::QueueProcessResult::Dead)
     queue.dead_messages.size.should eq(1)
     queue.dead_messages.first.attempts.should eq(2)
+  end
+end
+
+describe "Aptork SQL-backed storage" do
+  it "stores, reads, and deletes KV values" do
+    store = Aptork::SqlKvStore.new(FakeSqlConnection.new)
+
+    store.set("actor:alice", "ok")
+    store.get("actor:alice").should eq("ok")
+    store.delete("actor:alice")
+    store.get("actor:alice").should be_nil
+  end
+
+  it "expires KV values past their TTL on read" do
+    store = Aptork::SqlKvStore.new(FakeSqlConnection.new)
+
+    store.set("temp", "value", ttl: 5.milliseconds)
+    store.get("temp").should eq("value")
+    sleep 20.milliseconds
+    store.get("temp").should be_nil
+  end
+
+  it "lists KV values by prefix in key order" do
+    store = Aptork::SqlKvStore.new(FakeSqlConnection.new)
+    store.set("actor:bob", "bob")
+    store.set("actor:alice", "alice")
+    store.set("object:note", "note")
+
+    entries = store.list("actor:")
+
+    entries.map(&.key).should eq(["actor:alice", "actor:bob"])
+    entries.map(&.value).should eq(["alice", "bob"])
+  end
+
+  it "compares and swaps KV values atomically" do
+    store = Aptork::SqlKvStore.new(FakeSqlConnection.new)
+
+    store.cas("lock:actor", nil, "alice").should be_true
+    store.cas("lock:actor", nil, "bob").should be_false
+    store.get("lock:actor").should eq("alice")
+    store.cas("lock:actor", "alice", "bob").should be_true
+    store.cas("lock:actor", "alice", "carol").should be_false
+    store.get("lock:actor").should eq("bob")
+  end
+
+  it "enqueues and processes SQL queue messages" do
+    queue = Aptork::SqlMessageQueue.new(FakeSqlConnection.new)
+    queue.enqueue("outbox", Aptork.object("Note", "https://local.example/notes/1"))
+    queue.enqueue("outbox", Aptork.object("Note", "https://local.example/notes/2"))
+
+    queue.depth("outbox").should eq(2)
+
+    processed = [] of String
+    result = queue.process_one("outbox") { |message| processed << message.payload["id"].as_s }
+
+    result.should eq(Aptork::QueueProcessResult::Processed)
+    processed.should eq(["https://local.example/notes/1"])
+    queue.depth("outbox").should eq(1)
+  end
+
+  it "honors delayed availability for SQL queue messages" do
+    queue = Aptork::SqlMessageQueue.new(FakeSqlConnection.new)
+    queue.enqueue(
+      "outbox",
+      Aptork.object("Note", "https://local.example/notes/delayed"),
+      Aptork::EnqueueOptions.new(delay: Time::Span.new(seconds: 30))
+    )
+
+    now = Time.utc
+    depth = queue.get_depth("outbox", now)
+    depth.queued.should eq(1)
+    depth.ready.should eq(0)
+    depth.delayed.should eq(1)
+    queue.ready("outbox", now).should be_empty
+    queue.ready("outbox", now + Time::Span.new(seconds: 31)).size.should eq(1)
+  end
+
+  it "retries failed SQL queue messages and dead-letters after max attempts" do
+    queue = Aptork::SqlMessageQueue.new(FakeSqlConnection.new)
+    policy = Aptork::RetryPolicy.new(max_attempts: 2, initial_delay: Time::Span.new(seconds: 5))
+    queue.enqueue("outbox", Aptork.object("Note", "https://local.example/notes/1"))
+    now = Time.utc
+
+    first = queue.process_one("outbox", policy, now) { |_m| raise "temporary failure" }
+    second = queue.process_one("outbox", policy, now + Time::Span.new(seconds: 6)) { |_m| raise "permanent failure" }
+
+    first.should eq(Aptork::QueueProcessResult::Retried)
+    second.should eq(Aptork::QueueProcessResult::Dead)
+
+    dead = queue.dead_messages("outbox")
+    dead.size.should eq(1)
+    dead.first.attempts.should eq(2)
+  end
+
+  it "rewrites placeholders for the Postgres dialect" do
+    sql = "/* aptork:kv_set */ INSERT INTO aptork_kv (k, v, expires_at) VALUES (?, ?, ?)"
+    prepared = Aptork::SqlStatements.prepare(sql, Aptork::SqlDialect::Postgres)
+    prepared.should contain("VALUES ($1, $2, $3)")
+
+    Aptork::SqlStatements.prepare(sql, Aptork::SqlDialect::Sqlite).should eq(sql)
+  end
+end
+
+describe "Aptork::MetricsTelemetry" do
+  it "aggregates counters with labels" do
+    telemetry = Aptork::MetricsTelemetry.new
+    telemetry.counter("inbox.received", attributes: {"type" => "Create"})
+    telemetry.counter("inbox.received", 2_i64, attributes: {"type" => "Create"})
+    telemetry.counter("inbox.received", attributes: {"type" => "Follow"})
+
+    telemetry.counter_value("inbox.received", {"type" => "Create"}).should eq(3_i64)
+    telemetry.counter_value("inbox.received", {"type" => "Follow"}).should eq(1_i64)
+    telemetry.counter_value("inbox.received").should eq(0_i64)
+  end
+
+  it "tracks gauges and histograms" do
+    telemetry = Aptork::MetricsTelemetry.new
+    telemetry.gauge("queue.depth", 5.0)
+    telemetry.gauge("queue.depth", 3.0)
+    telemetry.gauge_value("queue.depth").should eq(3.0)
+
+    telemetry.histogram("delivery.duration_ms", 4.0)
+    telemetry.histogram("delivery.duration_ms", 80.0)
+    data = telemetry.histogram_data("delivery.duration_ms").not_nil!
+    data.count.should eq(2_i64)
+    data.sum.should eq(84.0)
+    # Bucket for le=5.0 should only contain the 4.0 observation.
+    index = data.buckets.index(5.0).not_nil!
+    data.counts[index].should eq(1_i64)
+  end
+
+  it "records span timings as a counter and a duration histogram" do
+    telemetry = Aptork::MetricsTelemetry.new
+    telemetry.span("delivery.send") { }
+
+    telemetry.counter_value("delivery.send.spans").should eq(1_i64)
+    telemetry.histogram_data("delivery.send.duration_ms").not_nil!.count.should eq(1_i64)
+  end
+
+  it "renders the OpenMetrics text exposition format" do
+    telemetry = Aptork::MetricsTelemetry.new
+    telemetry.counter("inbox.received", attributes: {"type" => "Create"})
+    telemetry.gauge("queue.depth", 2.0)
+    telemetry.histogram("delivery.duration_ms", 3.0)
+
+    output = telemetry.to_openmetrics
+    output.should contain(%(inbox_received_total{type="Create"} 1))
+    output.should contain("queue_depth 2")
+    output.should contain(%(delivery_duration_ms_bucket{le="+Inf"} 1))
+    output.should contain("delivery_duration_ms_sum 3")
+    output.should contain("delivery_duration_ms_count 1")
+    telemetry.to_prometheus.should eq(output)
+  end
+
+  it "resets all collected metrics" do
+    telemetry = Aptork::MetricsTelemetry.new
+    telemetry.counter("inbox.received")
+    telemetry.reset
+    telemetry.counter_value("inbox.received").should eq(0_i64)
+    telemetry.to_openmetrics.should eq("")
   end
 end
 

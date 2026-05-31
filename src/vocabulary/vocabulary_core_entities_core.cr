@@ -2,7 +2,7 @@ require "./vocabulary_types"
 require "json"
 require "uri"
 
-module Aptork
+module Aptok
   module Vocab
     class Object
       getter id : String?
@@ -176,7 +176,7 @@ module Aptork
       end
 
       def self.type_id : String
-        Aptork.type_id(type_name)
+        Aptok.type_id(type_name)
       end
 
       protected def self.json_object(value : JSON::Any) : JsonMap
@@ -195,9 +195,9 @@ module Aptork
         return [] of String unless property
 
         if string = property.as_s?
-          [Aptork.type_name(string)]
+          [Aptok.type_name(string)]
         else
-          property.as_a?.try(&.compact_map { |item| item.as_s?.try { |type| Aptork.type_name(type) } }) || [] of String
+          property.as_a?.try(&.compact_map { |item| item.as_s?.try { |type| Aptok.type_name(type) } }) || [] of String
         end
       end
 
@@ -302,7 +302,7 @@ module Aptork
       end
 
       def self.from_json_ld(value : JsonMap) : Activity
-        type = string_property(value, "type").try { |value| Aptork.type_name(value) }
+        type = string_property(value, "type").try { |value| Aptok.type_name(value) }
         case type
         when "Create"
           Create.from_json_ld(value)

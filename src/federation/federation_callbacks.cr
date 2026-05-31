@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   class InboxListeners
     def initialize(@federation : Federation)
     end

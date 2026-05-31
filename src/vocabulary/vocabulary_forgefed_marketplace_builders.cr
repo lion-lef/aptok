@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   def self.marketplace_listing(
     id : String,
     actor : String,
@@ -15,7 +15,7 @@ module Aptork
       "to"       => json(to),
     }
     properties["priceSpecification"] = json(price_specification) if price_specification
-    Aptork.object("Listing", id, properties)
+    Aptok.object("Listing", id, properties)
   end
 
   def self.marketplace_quantity(unit : String = "one", value : String? = nil) : JsonMap
@@ -69,7 +69,7 @@ module Aptork
     properties["content"] = json(content) if content
     properties["reciprocal"] = json(reciprocal) if reciprocal
     properties["location"] = json(location) if location
-    Aptork.object("Proposal", id, properties)
+    Aptok.object("Proposal", id, properties)
   end
 
   def self.marketplace_payment_link(name : String, proposal_id : String) : JsonMap
@@ -121,7 +121,7 @@ module Aptork
       "object"   => json(agreement),
       "to"       => json(to),
     }
-    Aptork.object("Offer", id, properties)
+    Aptok.object("Offer", id, properties)
   end
 
   def self.ordered_collection(id : String, items : Array(JsonMap), total_items : Int32? = nil) : JsonMap
@@ -129,7 +129,7 @@ module Aptork
       "totalItems"   => json(total_items || items.size),
       "orderedItems" => json(items),
     }
-    Aptork.object("OrderedCollection", id, properties)
+    Aptok.object("OrderedCollection", id, properties)
   end
 
   def self.collection(id : String, items : Array(JsonMap), total_items : Int32? = nil) : JsonMap
@@ -137,7 +137,7 @@ module Aptork
       "totalItems" => json(total_items || items.size),
       "items"      => json(items),
     }
-    Aptork.object("Collection", id, properties)
+    Aptok.object("Collection", id, properties)
   end
 
   def self.ordered_collection_page(
@@ -153,7 +153,7 @@ module Aptork
     }
     properties["next"] = json(next_id) if next_id
     properties["prev"] = json(prev_id) if prev_id
-    Aptork.object("OrderedCollectionPage", id, properties)
+    Aptok.object("OrderedCollectionPage", id, properties)
   end
 
   def self.collection_page(
@@ -169,7 +169,7 @@ module Aptork
     }
     properties["next"] = json(next_id) if next_id
     properties["prev"] = json(prev_id) if prev_id
-    Aptork.object("CollectionPage", id, properties)
+    Aptok.object("CollectionPage", id, properties)
   end
 
   def self.paginated_collection(

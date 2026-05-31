@@ -1,2 +1,2 @@
 require "spec"
-require "../src/aptork"
+require "../src/aptok"

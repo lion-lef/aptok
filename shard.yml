@@ -1,4 +1,4 @@
-name: aptork
+name: aptok
 version: 0.2.0
 
 authors:
@@ -9,8 +9,8 @@ description: Crystal ActivityPub federation toolkit inspired by Fedify, with For
 license: 0BSD
 
 targets:
-  aptork:
-    main: src/aptork.cr
+  aptok:
+    main: src/aptok.cr
 
 dependencies:
   db:

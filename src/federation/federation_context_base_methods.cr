@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   class Context
     def object(type : String, params : Hash(String, String)) : JsonMap?
       @federation.dispatch_object(self, type, params)
@@ -86,7 +86,7 @@ module Aptork
     end
 
     def get_signed_key_owner_actor(options : GetSignedKeyOptions = GetSignedKeyOptions.new) : Vocab::Actor?
-      get_signed_key_owner(Aptork::Vocab::Actor, options)
+      get_signed_key_owner(Aptok::Vocab::Actor, options)
     end
 
     def get_signed_key_owner(type : T.class, options : GetSignedKeyOptions = GetSignedKeyOptions.new) : T? forall T
@@ -190,7 +190,7 @@ module Aptork
     end
 
     def lookup_nodeinfo(origin : String, options : NodeInfoLookupOptions = NodeInfoLookupOptions.new) : JsonMap?
-      Aptork.lookup_nodeinfo(origin, lookup_nodeinfo_document_loader(options), options)
+      Aptok.lookup_nodeinfo(origin, lookup_nodeinfo_document_loader(options), options)
     end
 
     def lookup_nodeinfo(origin : URI, options : NodeInfoLookupOptions = NodeInfoLookupOptions.new) : JsonMap?
@@ -202,7 +202,7 @@ module Aptork
     end
 
     def lookup_nodeinfo_document(origin : String, options : NodeInfoLookupOptions = NodeInfoLookupOptions.new) : NodeInfo?
-      Aptork.lookup_nodeinfo_document(origin, lookup_nodeinfo_document_loader(options), options)
+      Aptok.lookup_nodeinfo_document(origin, lookup_nodeinfo_document_loader(options), options)
     end
 
     def lookup_nodeinfo_document(origin : URI, options : NodeInfoLookupOptions = NodeInfoLookupOptions.new) : NodeInfo?

@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   class Federation
     private alias DslObjectDispatcher = ObjectDispatcher | ParamObjectDispatcher
     private alias DslCollectionDispatcher = CollectionDispatcher | ParamCollectionDispatcher | ParamCursorCollectionDispatcher

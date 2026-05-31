@@ -8,15 +8,15 @@
 #     crystal spec spec/drivers/sqlite_driver.cr
 #
 require "spec"
-require "../../src/aptork"
+require "../../src/aptok"
 require "../../src/store/sqlite"
 
 private def new_store
-  conn = Aptork::SqliteConnection.open(":memory:")
-  {conn, Aptork::SqlKvStore.new(conn)}
+  conn = Aptok::SqliteConnection.open(":memory:")
+  {conn, Aptok::SqlKvStore.new(conn)}
 end
 
-describe Aptork::SqliteConnection do
+describe Aptok::SqliteConnection do
   it "stores, reads, and deletes KV values against real SQLite" do
     _conn, store = new_store
     store.set("actor:alice", "ok")
@@ -55,10 +55,10 @@ describe Aptork::SqliteConnection do
   end
 
   it "processes, retries, and dead-letters queue messages" do
-    conn = Aptork::SqliteConnection.open(":memory:")
-    queue = Aptork::SqlMessageQueue.new(conn)
-    queue.enqueue("outbox", Aptork.object("Note", "https://local.example/notes/1"))
-    queue.enqueue("outbox", Aptork.object("Note", "https://local.example/notes/2"))
+    conn = Aptok::SqliteConnection.open(":memory:")
+    queue = Aptok::SqlMessageQueue.new(conn)
+    queue.enqueue("outbox", Aptok.object("Note", "https://local.example/notes/1"))
+    queue.enqueue("outbox", Aptok.object("Note", "https://local.example/notes/2"))
     queue.depth("outbox").should eq(2)
 
     processed = [] of String
@@ -66,9 +66,9 @@ describe Aptork::SqliteConnection do
     processed.should eq(["https://local.example/notes/1"])
     queue.depth("outbox").should eq(1)
 
-    policy = Aptork::RetryPolicy.new(max_attempts: 1)
-    queue.enqueue("dlq", Aptork.object("Note", "https://local.example/notes/fail"))
-    queue.process_one("dlq", policy) { |_m| raise "boom" }.should eq(Aptork::QueueProcessResult::Dead)
+    policy = Aptok::RetryPolicy.new(max_attempts: 1)
+    queue.enqueue("dlq", Aptok.object("Note", "https://local.example/notes/fail"))
+    queue.process_one("dlq", policy) { |_m| raise "boom" }.should eq(Aptok::QueueProcessResult::Dead)
     queue.dead_messages("dlq").size.should eq(1)
   end
 end

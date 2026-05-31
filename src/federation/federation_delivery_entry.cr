@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   class Federation
     def outbound_delivery_payload(
       delivery : DeliveryConfig,
@@ -6,19 +6,19 @@ module Aptork
       sender_key_pairs : Array(ActorKeyPair) = [] of ActorKeyPair
     ) : JsonMap
       delivery_payload = JsonMap{
-        "inbox" => Aptork.json(delivery.inbox),
-        "actor" => Aptork.json(delivery.actor),
+        "inbox" => Aptok.json(delivery.inbox),
+        "actor" => Aptok.json(delivery.actor),
       }
-      delivery_payload["target"] = Aptork.json(delivery.target) if delivery.target
-      delivery_payload["headers"] = Aptork.json(delivery.headers) unless delivery.headers.empty?
-      delivery_payload["actorIds"] = Aptork.json(delivery.actor_ids) unless delivery.actor_ids.empty?
+      delivery_payload["target"] = Aptok.json(delivery.target) if delivery.target
+      delivery_payload["headers"] = Aptok.json(delivery.headers) unless delivery.headers.empty?
+      delivery_payload["actorIds"] = Aptok.json(delivery.actor_ids) unless delivery.actor_ids.empty?
 
       JsonMap{
-        "type"     => Aptork.json("OutboundDelivery"),
-        "delivery" => Aptork.json(delivery_payload),
-        "activity" => Aptork.json(activity),
+        "type"     => Aptok.json("OutboundDelivery"),
+        "delivery" => Aptok.json(delivery_payload),
+        "activity" => Aptok.json(activity),
       }.tap do |payload|
-        payload["senderKeyPairs"] = Aptork.json(sender_key_pairs.map { |key_pair| actor_key_pair_payload(key_pair) }) unless sender_key_pairs.empty?
+        payload["senderKeyPairs"] = Aptok.json(sender_key_pairs.map { |key_pair| actor_key_pair_payload(key_pair) }) unless sender_key_pairs.empty?
       end
     end
 
@@ -31,14 +31,14 @@ module Aptork
       sender_key_pairs : Array(ActorKeyPair) = [] of ActorKeyPair
     ) : JsonMap
       JsonMap{
-        "type"             => Aptork.json("FanoutDelivery"),
-        "senderIdentifier" => Aptork.json(sender_identifier),
-        "recipients"       => Aptork.json(recipients.map { |recipient| recipient_payload(recipient) }),
-        "activity"         => Aptork.json(activity),
-        "syncCollection"   => Aptork.json(sync_collection),
+        "type"             => Aptok.json("FanoutDelivery"),
+        "senderIdentifier" => Aptok.json(sender_identifier),
+        "recipients"       => Aptok.json(recipients.map { |recipient| recipient_payload(recipient) }),
+        "activity"         => Aptok.json(activity),
+        "syncCollection"   => Aptok.json(sync_collection),
       }.tap do |payload|
-        payload["collectionName"] = Aptork.json(collection_name) if collection_name
-        payload["senderKeyPairs"] = Aptork.json(sender_key_pairs.map { |key_pair| actor_key_pair_payload(key_pair) }) unless sender_key_pairs.empty?
+        payload["collectionName"] = Aptok.json(collection_name) if collection_name
+        payload["senderKeyPairs"] = Aptok.json(sender_key_pairs.map { |key_pair| actor_key_pair_payload(key_pair) }) unless sender_key_pairs.empty?
       end
     end
 
@@ -51,32 +51,32 @@ module Aptork
       sender_key_pairs : Array(ActorKeyPair) = [] of ActorKeyPair
     ) : JsonMap
       delivery_payload = JsonMap{
-        "inbox" => Aptork.json(delivery.inbox),
-        "actor" => Aptork.json(delivery.actor),
+        "inbox" => Aptok.json(delivery.inbox),
+        "actor" => Aptok.json(delivery.actor),
       }
-      delivery_payload["target"] = Aptork.json(delivery.target) if delivery.target
-      delivery_payload["headers"] = Aptork.json(delivery.headers) unless delivery.headers.empty?
-      delivery_payload["actorIds"] = Aptork.json(delivery.actor_ids) unless delivery.actor_ids.empty?
+      delivery_payload["target"] = Aptok.json(delivery.target) if delivery.target
+      delivery_payload["headers"] = Aptok.json(delivery.headers) unless delivery.headers.empty?
+      delivery_payload["actorIds"] = Aptok.json(delivery.actor_ids) unless delivery.actor_ids.empty?
 
       JsonMap{
-        "type"                => Aptork.json("ForwardedDelivery"),
-        "forwarderIdentifier" => Aptork.json(forwarder_identifier),
-        "delivery"            => Aptork.json(delivery_payload),
-        "activity"            => Aptork.json(activity),
-        "payload"             => Aptork.json(payload),
-        "sourceHeaders"       => Aptork.json(source_headers),
+        "type"                => Aptok.json("ForwardedDelivery"),
+        "forwarderIdentifier" => Aptok.json(forwarder_identifier),
+        "delivery"            => Aptok.json(delivery_payload),
+        "activity"            => Aptok.json(activity),
+        "payload"             => Aptok.json(payload),
+        "sourceHeaders"       => Aptok.json(source_headers),
       }.tap do |task_payload|
-        task_payload["senderKeyPairs"] = Aptork.json(sender_key_pairs.map { |key_pair| actor_key_pair_payload(key_pair) }) unless sender_key_pairs.empty?
+        task_payload["senderKeyPairs"] = Aptok.json(sender_key_pairs.map { |key_pair| actor_key_pair_payload(key_pair) }) unless sender_key_pairs.empty?
       end
     end
 
     def inbound_delivery_payload(recipient_identifier : String?, activity : JsonMap, trusted : Bool = false) : JsonMap
       payload = JsonMap{
-        "type"     => Aptork.json("InboundDelivery"),
-        "activity" => Aptork.json(activity),
+        "type"     => Aptok.json("InboundDelivery"),
+        "activity" => Aptok.json(activity),
       }
-      payload["recipientIdentifier"] = Aptork.json(recipient_identifier) if recipient_identifier
-      payload["trusted"] = Aptork.json(true) if trusted
+      payload["recipientIdentifier"] = Aptok.json(recipient_identifier) if recipient_identifier
+      payload["trusted"] = Aptok.json(true) if trusted
       payload
     end
 
@@ -135,10 +135,10 @@ module Aptork
 
     private def recipient_payload(recipient : Recipient) : JsonMap
       payload = JsonMap{
-        "id"    => Aptork.json(recipient.id),
-        "inbox" => Aptork.json(recipient.inbox),
+        "id"    => Aptok.json(recipient.id),
+        "inbox" => Aptok.json(recipient.inbox),
       }
-      payload["actorIds"] = Aptork.json(recipient.actor_ids) unless recipient.actor_ids.empty?
+      payload["actorIds"] = Aptok.json(recipient.actor_ids) unless recipient.actor_ids.empty?
       payload
     end
 
@@ -152,13 +152,13 @@ module Aptork
 
     private def actor_key_pair_payload(key_pair : ActorKeyPair) : JsonMap
       payload = JsonMap{
-        "id"           => Aptork.json(key_pair.id),
-        "owner"        => Aptork.json(key_pair.owner),
-        "publicKeyPem" => Aptork.json(key_pair.public_key_pem),
-        "algorithm"    => Aptork.json(key_pair.algorithm),
+        "id"           => Aptok.json(key_pair.id),
+        "owner"        => Aptok.json(key_pair.owner),
+        "publicKeyPem" => Aptok.json(key_pair.public_key_pem),
+        "algorithm"    => Aptok.json(key_pair.algorithm),
       }
-      payload["privateKeyPath"] = Aptork.json(key_pair.private_key_path) if key_pair.private_key_path
-      payload["privateKeyPem"] = Aptork.json(key_pair.private_key_pem) if key_pair.private_key_pem
+      payload["privateKeyPath"] = Aptok.json(key_pair.private_key_path) if key_pair.private_key_path
+      payload["privateKeyPem"] = Aptok.json(key_pair.private_key_pem) if key_pair.private_key_pem
       payload
     end
 
@@ -217,7 +217,7 @@ module Aptork
     end
 
     private def warn_about_actor_contract(ctx : Context, identifier : String, actor : JsonMap) : Nil
-      logger = Log.for("aptork.federation.actor")
+      logger = Log.for("aptok.federation.actor")
       expected_actor_uri = ctx.get_actor_uri(identifier)
       if actor_id = actor["id"]?.try(&.as_s?)
         unless actor_id == expected_actor_uri

@@ -1,7 +1,7 @@
 require "http/server"
 require "./http"
 
-module Aptork
+module Aptok
   def self.request_from_http(request : HTTP::Request) : Request
     query = Hash(String, String).new
     request.query_params.each do |key, value|

@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   class Context
     def enqueue_fanout_activity(
       sender_identifier : String,

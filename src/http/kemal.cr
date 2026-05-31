@@ -2,7 +2,7 @@ require "kemal"
 
 require "../http/http"
 
-module Aptork
+module Aptok
   def self.request_from_kemal(context : ::HTTP::Server::Context) : Request
     query = Hash(String, String).new
     context.request.query_params.each do |key, value|
@@ -31,9 +31,9 @@ module Aptork
     context.response.print response.body
   end
 
-  def self.handle_kemal_request(federation : Federation, request : ::HTTP::Server::Context, options : FetchOptions = FetchOptions.new) : Aptork::Response
-    aptork_request = request_from_kemal(request)
-    federation.fetch(aptork_request, options)
+  def self.handle_kemal_request(federation : Federation, request : ::HTTP::Server::Context, options : FetchOptions = FetchOptions.new) : Aptok::Response
+    aptok_request = request_from_kemal(request)
+    federation.fetch(aptok_request, options)
   end
 
   def self.kemal_handler(

@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   class Context
     def send_activity(
       sender_identifier : String,
@@ -22,11 +22,11 @@ module Aptork
           headers: delivery_headers_for_recipient(sender_identifier, collection_name, recipient, sync_collection),
           actor_ids: recipient.synchronization_actor_ids
         )
-        activity_id = @federation.telemetry.span("aptork.outbox.deliver", telemetry_attributes({"inbox" => delivery.inbox, "actor" => delivery.actor})) do
+        activity_id = @federation.telemetry.span("aptok.outbox.deliver", telemetry_attributes({"inbox" => delivery.inbox, "actor" => delivery.actor})) do
           @transport.deliver!(delivery, signed_activity, signing_key_pair)
         end
         record = @federation.record_sent(SentActivity.new(sender_identifier, recipient, activity_id, signed_activity))
-        @federation.telemetry.counter("aptork.outbox.deliveries", attributes: telemetry_attributes({"status" => "delivered"}))
+        @federation.telemetry.counter("aptok.outbox.deliveries", attributes: telemetry_attributes({"status" => "delivered"}))
         sent << record
       end
 
@@ -105,7 +105,7 @@ module Aptork
       activity : JsonMap,
       options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
-      recipient = Aptork.recipient_from_actor(actor, options.prefer_shared_inbox)
+      recipient = Aptok.recipient_from_actor(actor, options.prefer_shared_inbox)
       recipients = recipient ? [recipient] : [] of Recipient
       send_activity_with_key_pairs(sender_key_pairs, recipients, activity, options)
     end
@@ -125,7 +125,7 @@ module Aptork
       activity : JsonMap,
       options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
-      recipient = Aptork.recipient_from_actor(actor, options.prefer_shared_inbox)
+      recipient = Aptok.recipient_from_actor(actor, options.prefer_shared_inbox)
       recipients = recipient ? [recipient] : [] of Recipient
       send_activity_with_key_pairs(sender_key_pairs, recipients, activity, options)
     end
@@ -145,7 +145,7 @@ module Aptork
       activity : JsonMap,
       options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
-      recipients = actors.compact_map { |actor| Aptork.recipient_from_actor(actor, options.prefer_shared_inbox) }
+      recipients = actors.compact_map { |actor| Aptok.recipient_from_actor(actor, options.prefer_shared_inbox) }
       send_activity_with_key_pairs(sender_key_pairs, recipients, activity, options)
     end
 
@@ -164,7 +164,7 @@ module Aptork
       activity : JsonMap,
       options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
-      recipients = actors.compact_map { |actor| Aptork.recipient_from_actor(actor, options.prefer_shared_inbox) }
+      recipients = actors.compact_map { |actor| Aptok.recipient_from_actor(actor, options.prefer_shared_inbox) }
       send_activity_with_key_pairs(sender_key_pairs, recipients, activity, options)
     end
 
@@ -174,7 +174,7 @@ module Aptork
       activity : JsonMap,
       options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
-      recipient = Aptork.recipient_from_actor(actor, options.prefer_shared_inbox)
+      recipient = Aptok.recipient_from_actor(actor, options.prefer_shared_inbox)
       recipients = recipient ? [recipient] : [] of Recipient
       send_activity_to_recipients(sender_identifier, recipients, activity, nil, options)
     end
@@ -185,7 +185,7 @@ module Aptork
       activity : JsonMap,
       options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
-      recipient = Aptork.recipient_from_actor(actor, options.prefer_shared_inbox)
+      recipient = Aptok.recipient_from_actor(actor, options.prefer_shared_inbox)
       recipients = recipient ? [recipient] : [] of Recipient
       send_activity_to_recipients(sender_identifier, recipients, activity, nil, options)
     end
@@ -196,7 +196,7 @@ module Aptork
       activity : JsonMap,
       options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
-      recipients = actors.compact_map { |actor| Aptork.recipient_from_actor(actor, options.prefer_shared_inbox) }
+      recipients = actors.compact_map { |actor| Aptok.recipient_from_actor(actor, options.prefer_shared_inbox) }
       send_activity_to_recipients(sender_identifier, recipients, activity, nil, options)
     end
 
@@ -206,7 +206,7 @@ module Aptork
       activity : JsonMap,
       options : SendActivityOptions = SendActivityOptions.new
     ) : SendActivityResult
-      recipients = actors.compact_map { |actor| Aptork.recipient_from_actor(actor, options.prefer_shared_inbox) }
+      recipients = actors.compact_map { |actor| Aptok.recipient_from_actor(actor, options.prefer_shared_inbox) }
       send_activity_to_recipients(sender_identifier, recipients, activity, nil, options)
     end
 

@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   module Signatures
     def self.ed25519_public_key_pem_from_multibase(public_key_multibase : String) : String?
       decoded = base58btc_decode(public_key_multibase)
@@ -18,9 +18,9 @@ module Aptork
       return false unless signature
       return false unless signature.size == 64
 
-      keyfile = File.tempfile("aptork-ed25519-public-key")
-      datafile = File.tempfile("aptork-ed25519-data")
-      sigfile = File.tempfile("aptork-ed25519-signature")
+      keyfile = File.tempfile("aptok-ed25519-public-key")
+      datafile = File.tempfile("aptok-ed25519-data")
+      sigfile = File.tempfile("aptok-ed25519-signature")
       begin
         keyfile.print(public_key_pem)
         keyfile.flush
@@ -50,7 +50,7 @@ module Aptork
     end
 
     private def self.verify_string_with_openssl(data : String, signature : Bytes, public_key_path : String) : Bool
-      sigfile = File.tempfile("aptork-signature")
+      sigfile = File.tempfile("aptok-signature")
       begin
         sigfile.write(signature)
         sigfile.flush
@@ -85,7 +85,7 @@ module Aptork
     end
 
     private def self.ed25519_public_key_bytes(public_key_pem : String) : Bytes
-      keyfile = File.tempfile("aptork-ed25519-public-key")
+      keyfile = File.tempfile("aptok-ed25519-public-key")
       begin
         keyfile.print(public_key_pem)
         keyfile.flush

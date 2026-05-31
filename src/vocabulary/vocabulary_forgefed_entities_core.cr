@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   module Vocab
     class ForgeFedTag < ForgeFedObject
       getter href : String?

@@ -1,7 +1,7 @@
 require "../vocabulary/vocabulary"
 require "../remote/remote"
 
-module Aptork
+module Aptok
   NODEINFO_2_1_REL           = "http://nodeinfo.diaspora.software/ns/schema/2.1"
   NODEINFO_2_0_REL           = "http://nodeinfo.diaspora.software/ns/schema/2.0"
   NODEINFO_2_1_CONTENT_TYPE  = "application/json; profile=\"http://nodeinfo.diaspora.software/ns/schema/2.1#\""

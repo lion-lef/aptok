@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   class Federation
     def set_outbox_listener_error_handler(handler : OutboxListenerErrorHandler) : self
       @outbox_listener_error_handler = handler
@@ -52,7 +52,7 @@ module Aptork
       if handler = @outbox_permanent_failure_handler
         handler.call(ctx, failure)
       else
-        Log.for("aptork.federation.outbox").warn do
+        Log.for("aptok.federation.outbox").warn do
           "permanent delivery failure for #{delivery.inbox} (#{status_code}); skipping retry"
         end
       end
@@ -70,7 +70,7 @@ module Aptork
       if handler = @outbox_error_handler
         handler.call(ctx, failure)
       else
-        Log.for("aptork.federation.outbox").error do
+        Log.for("aptok.federation.outbox").error do
           "queued delivery failure for #{delivery.inbox} on attempt #{attempts}: #{error.message}"
         end
       end
@@ -217,13 +217,13 @@ module Aptork
     def handle(request : Request, options : FetchOptions) : Response
       started = Time.monotonic
       attributes = telemetry_attributes({"http.method" => request.method.upcase, "http.route" => request.path})
-      @telemetry.span("aptork.http.request", attributes) do
+      @telemetry.span("aptok.http.request", attributes) do
         response = Router.new(self, options).handle(request)
         duration_ms = (Time.monotonic - started).total_milliseconds
         response_attributes = attributes.dup
         response_attributes["http.status_code"] = response.status.to_s
-        @telemetry.counter("aptork.http.requests", attributes: response_attributes)
-        @telemetry.histogram("aptork.http.request.duration_ms", duration_ms, response_attributes)
+        @telemetry.counter("aptok.http.requests", attributes: response_attributes)
+        @telemetry.histogram("aptok.http.request.duration_ms", duration_ms, response_attributes)
         response
       end
     end

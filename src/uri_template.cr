@@ -1,6 +1,6 @@
 require "uri"
 
-module Aptork
+module Aptok
   record ParsedUri,
     type : String,
     identifier : String? = nil,

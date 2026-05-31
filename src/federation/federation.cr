@@ -18,5 +18,5 @@ require "./federation_setup"
 require "./federation_routing"
 require "./federation_delivery"
 
-module Aptork
+module Aptok
 end

@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   private def self.nodeinfo_link(document : JsonMap) : String?
     links = document["links"]?.try(&.as_a?) || [] of JSON::Any
     link = links.find do |link|

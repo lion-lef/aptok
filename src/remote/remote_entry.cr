@@ -8,7 +8,7 @@ require "../vocabulary/vocabulary"
 require "../signatures/signatures"
 require "../portable"
 
-module Aptork
+module Aptok
   module Remote
     def self.default_user_agent : String
       DEFAULT_USER_AGENT
@@ -157,10 +157,10 @@ module Aptork
 
     def self.lookup_object(target : String, loader : DocumentLoader, options : LookupObjectOptions = LookupObjectOptions.new) : JsonMap?
       stripped = target.strip
-      if Aptork.ap_uri?(stripped)
-        gateways = (options.gateways + Aptork.ap_uri_gateways(stripped)).uniq
+      if Aptok.ap_uri?(stripped)
+        gateways = (options.gateways + Aptok.ap_uri_gateways(stripped)).uniq
         gateways.each do |gateway|
-          url = Aptork.ap_gateway_url(gateway, stripped)
+          url = Aptok.ap_gateway_url(gateway, stripped)
           if object = loader.call(url)
             return lookup_object_result(stripped, object, options)
           end
@@ -227,35 +227,35 @@ module Aptork
     end
 
     def self.lookup_nodeinfo(origin : String, loader : DocumentLoader, options : NodeInfoLookupOptions = NodeInfoLookupOptions.new) : JsonMap?
-      Aptork.lookup_nodeinfo(origin, loader, options)
+      Aptok.lookup_nodeinfo(origin, loader, options)
     end
 
     def self.lookup_nodeinfo(origin : URI, loader : DocumentLoader, options : NodeInfoLookupOptions = NodeInfoLookupOptions.new) : JsonMap?
-      Aptork.lookup_nodeinfo(origin, loader, options)
+      Aptok.lookup_nodeinfo(origin, loader, options)
     end
 
     def self.lookup_nodeinfo(origin : String, options : NodeInfoLookupOptions = NodeInfoLookupOptions.new) : JsonMap?
-      Aptork.lookup_nodeinfo(origin, options)
+      Aptok.lookup_nodeinfo(origin, options)
     end
 
     def self.lookup_nodeinfo(origin : URI, options : NodeInfoLookupOptions = NodeInfoLookupOptions.new) : JsonMap?
-      Aptork.lookup_nodeinfo(origin, options)
+      Aptok.lookup_nodeinfo(origin, options)
     end
 
     def self.lookup_nodeinfo_document(origin : String, loader : DocumentLoader, options : NodeInfoLookupOptions = NodeInfoLookupOptions.new) : NodeInfo?
-      Aptork.lookup_nodeinfo_document(origin, loader, options)
+      Aptok.lookup_nodeinfo_document(origin, loader, options)
     end
 
     def self.lookup_nodeinfo_document(origin : URI, loader : DocumentLoader, options : NodeInfoLookupOptions = NodeInfoLookupOptions.new) : NodeInfo?
-      Aptork.lookup_nodeinfo_document(origin, loader, options)
+      Aptok.lookup_nodeinfo_document(origin, loader, options)
     end
 
     def self.lookup_nodeinfo_document(origin : String, options : NodeInfoLookupOptions = NodeInfoLookupOptions.new) : NodeInfo?
-      Aptork.lookup_nodeinfo_document(origin, options)
+      Aptok.lookup_nodeinfo_document(origin, options)
     end
 
     def self.lookup_nodeinfo_document(origin : URI, options : NodeInfoLookupOptions = NodeInfoLookupOptions.new) : NodeInfo?
-      Aptork.lookup_nodeinfo_document(origin, options)
+      Aptok.lookup_nodeinfo_document(origin, options)
     end
 
     def self.lookup_webfinger(resource : String, loader : DocumentLoader) : JsonMap?

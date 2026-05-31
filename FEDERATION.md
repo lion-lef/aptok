@@ -1,7 +1,7 @@
 # Federation
 
-This document describes how **Aptork** federates, following the convention
-defined by [FEP-67ff: FEDERATION.md][fep-67ff]. Aptork is a Crystal toolkit for
+This document describes how **Aptok** federates, following the convention
+defined by [FEP-67ff: FEDERATION.md][fep-67ff]. Aptok is a Crystal toolkit for
 building ActivityPub servers (inspired by [Fedify][fedify]); the federation
 behavior listed here is what the toolkit itself implements and exposes to
 applications built on top of it.
@@ -33,7 +33,7 @@ applications built on top of it.
 | --- | --- | --- | --- |
 | [FEP-67ff][fep-67ff] | FEDERATION.md | ✅ | This document. |
 | [FEP-8b32][fep-8b32] | Object Integrity Proofs | ✅ | `eddsa-jcs-2022` Ed25519 proofs (`create_object_proof`, `verify_object_proof?`). |
-| [FEP-521a][fep-521a] | Representing actor's public keys | ✅ | `Multikey` / `publicKeyMultibase` assertion methods (`Aptork.multikey`). |
+| [FEP-521a][fep-521a] | Representing actor's public keys | ✅ | `Multikey` / `publicKeyMultibase` assertion methods (`Aptok.multikey`). |
 | [FEP-8fcf][fep-8fcf] | Followers collection synchronization | ✅ | `Collection-Synchronization` header generation during delivery. |
 | [FEP-ef61][fep-ef61] | Portable objects | ✅ | `ap://did...` helpers, compatible `/.well-known/apgateway/...` routing and lookup, actor `gateways`, and `did:key` proof keys. |
 | [FEP-0837][fep-0837] | Federated Marketplace | ✅ | Proposal/Intent/Commitment/Agreement builders, ValueFlows mapping, and optional strict validators. |

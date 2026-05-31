@@ -1,7 +1,7 @@
 require "json"
 require "uri"
 
-module Aptork
+module Aptok
   alias JsonMap = Hash(String, JSON::Any)
 
   VERSION                          = "0.1.0"

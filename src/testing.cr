@@ -1,7 +1,7 @@
 require "./federation/federation"
 require "uri"
 
-module Aptork
+module Aptok
   class CaptureTransport < Transport
     record Delivery, delivery_config : DeliveryConfig, activity : JsonMap, payload : String
 

@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   class Federation
     def authorize_outbox?(ctx : Context, identifier : String) : Bool
       authorizer = @outbox_authorizer
@@ -120,7 +120,7 @@ module Aptork
       return true if owner == required
       return false unless owner.starts_with?("did:")
 
-      Aptork.same_resource_origin?(owner, required)
+      Aptok.same_resource_origin?(owner, required)
     end
 
     private def attributed_identities(object : JsonMap) : Array(String)
@@ -180,7 +180,7 @@ module Aptork
       if policy.request_nonce
         nonce = Random::Secure.hex(16)
         @kv ||= MemoryKvStore.new
-        @kv.try(&.set("aptork:accept-signature:nonce:#{nonce}", "1", policy.nonce_ttl))
+        @kv.try(&.set("aptok:accept-signature:nonce:#{nonce}", "1", policy.nonce_ttl))
       end
       {
         "Accept-Signature" => accept_signature_challenge(policy, nonce),
@@ -223,7 +223,7 @@ module Aptork
       kv = @kv
       return false unless kv
 
-      key = "aptork:accept-signature:nonce:#{nonce}"
+      key = "aptok:accept-signature:nonce:#{nonce}"
       present = !!kv.get(key)
       kv.delete(key) if present
       present

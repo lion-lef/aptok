@@ -11,7 +11,7 @@ require "../uri_template"
 require "set"
 require "log"
 
-module Aptork
+module Aptok
   class Context
   end
 

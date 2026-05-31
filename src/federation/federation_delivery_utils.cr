@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   def self.extract_inboxes(
     recipients : Array(Recipient),
     prefer_shared_inbox : Bool = false,
@@ -59,14 +59,14 @@ module Aptork
     entries = value.as_a?
     return [] of String unless entries
 
-    entries.compact_map { |item| item.as_s?.try { |gateway| Aptork.normalize_ap_gateway(gateway) } }
+    entries.compact_map { |item| item.as_s?.try { |gateway| Aptok.normalize_ap_gateway(gateway) } }
   end
 
   private def self.gateway_delivery_uri(value : String, gateways : Array(String)) : String
-    return value unless Aptork.ap_uri?(value)
+    return value unless Aptok.ap_uri?(value)
 
     gateway = gateways.first?
-    gateway ? Aptork.ap_gateway_url(gateway, value) : value
+    gateway ? Aptok.ap_gateway_url(gateway, value) : value
   rescue
     value
   end
@@ -78,7 +78,7 @@ module Aptork
   end
 
   private def self.same_uri_origin_for_extraction?(left : String, right : String) : Bool
-    Aptork.same_resource_origin?(left, right)
+    Aptok.same_resource_origin?(left, right)
   end
 
   class Federation
@@ -121,7 +121,7 @@ module Aptork
 
       uri = URI.parse("https://#{value}/")
       raise ArgumentError.new("handle_host must include a host") unless uri.host
-      authority = Aptork.normalize_actor_handle(
+      authority = Aptok.normalize_actor_handle(
         "_@#{uri.host}",
         ActorHandleOptions.new(trim_leading_at: true, punycode: true)
       ).split("@", 2)[1]

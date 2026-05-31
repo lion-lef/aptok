@@ -1,7 +1,7 @@
-module Aptork
+module Aptok
   class Context
     private def recipient_from_actor(actor : JsonMap, options : SendActivityOptions) : Recipient?
-      Aptork.recipient_from_actor(actor, options.prefer_shared_inbox)
+      Aptok.recipient_from_actor(actor, options.prefer_shared_inbox)
     end
 
     private def require_sendable_activity!(activity : JsonMap) : Nil
@@ -184,7 +184,7 @@ module Aptork
     end
 
     private def same_uri_origin?(left : String, right : String) : Bool
-      Aptork.same_resource_origin?(left, right)
+      Aptok.same_resource_origin?(left, right)
     end
 
     private def telemetry_attributes(values : Hash(String, String)) : TelemetryAttributes

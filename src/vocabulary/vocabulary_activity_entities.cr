@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   module Vocab
     class PropertyValue < Object
       getter name : String?
@@ -33,7 +33,7 @@ module Aptork
       end
 
       def self.from_json_ld(value : JsonMap) : Link
-        type = string_property(value, "type").try { |value| Aptork.type_name(value) }
+        type = string_property(value, "type").try { |value| Aptok.type_name(value) }
         case type
         when "Mention"
           Mention.from_json_ld(value)
@@ -158,7 +158,7 @@ module Aptork
       end
 
       def self.from_json_ld(value : JsonMap) : Actor
-        type = string_property(value, "type").try { |value| Aptork.type_name(value) }
+        type = string_property(value, "type").try { |value| Aptok.type_name(value) }
         case type
         when "Application"
           Application.from_json_ld(value)

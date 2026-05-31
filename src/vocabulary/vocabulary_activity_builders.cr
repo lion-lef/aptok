@@ -1,4 +1,4 @@
-module Aptork
+module Aptok
   def self.forgefed_project(
     id : String,
     name : String,
@@ -144,7 +144,7 @@ module Aptork
       "to"           => json(to),
       "published"    => json(now),
     }
-    Aptork.object("Push", id, properties)
+    Aptok.object("Push", id, properties)
   end
 
   def self.forgefed_ticket(
@@ -171,7 +171,7 @@ module Aptork
     properties["attachment"] = json(attachment) unless attachment.empty?
     properties["dependsOn"] = json(depends_on) unless depends_on.empty?
     properties["dependants"] = json(dependants) unless dependants.empty?
-    Aptork.object("Ticket", id, properties)
+    Aptok.object("Ticket", id, properties)
   end
 
   def self.forgefed_ticket_dependency(
@@ -192,7 +192,7 @@ module Aptork
     }
     properties["attributedTo"] = json(attributed_to) if attributed_to && !attributed_to.empty?
     properties["summary"] = json(summary) if summary && !summary.empty?
-    Aptork.object("Relationship", id, properties)
+    Aptok.object("Relationship", id, properties)
   end
 
   def self.forgefed_activity(
@@ -211,7 +211,7 @@ module Aptork
       "published" => json(now),
     }
     properties["target"] = json(target) if target
-    Aptork.object(type, id, properties)
+    Aptok.object(type, id, properties)
   end
 
   macro forgefed_activity_builder(method_name, type_name)
@@ -242,7 +242,7 @@ module Aptork
     mr_diff : String? = nil,
     patches : Array(JsonMap) = [] of JsonMap
   ) : JsonMap
-    offer = Aptork.object("Offer", nil, JsonMap{
+    offer = Aptok.object("Offer", nil, JsonMap{
       "@context" => json([ACTIVITYSTREAMS_CONTEXT, FORGEFED_CONTEXT]),
       "object"   => json(source_branch),
       "target"   => json(target_branch),
@@ -283,7 +283,7 @@ module Aptork
     }
     properties["price"] = json(price) if price
     properties["priceCurrency"] = json(currency) if currency
-    Aptork.object("Offer", id, properties)
+    Aptok.object("Offer", id, properties)
   end
 
   def self.marketplace_price_specification(
@@ -298,7 +298,7 @@ module Aptork
       "priceCurrency" => json(currency),
     }
     properties["unitText"] = json(unit_text) if unit_text
-    Aptork.object("PriceSpecification", id, properties)
+    Aptok.object("PriceSpecification", id, properties)
   end
 
   def self.marketplace_product(
@@ -313,7 +313,7 @@ module Aptork
     }
     properties["summary"] = json(summary) if summary
     properties["attributedTo"] = json(attributed_to) if attributed_to
-    Aptork.object("Product", id, properties)
+    Aptok.object("Product", id, properties)
   end
 
   def self.marketplace_service(
@@ -332,6 +332,6 @@ module Aptork
     properties["attributedTo"] = json(attributed_to) if attributed_to
     properties["provider"] = json(provider) if provider
     properties["termsOfService"] = json(terms_of_service) if terms_of_service
-    Aptork.object("Service", id, properties)
+    Aptok.object("Service", id, properties)
   end
 end

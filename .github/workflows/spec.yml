@@ -1,0 +1,18 @@
+name: spec
+
+on:
+  push:
+    branches: [release, main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    container:
+      image: crystallang/crystal:1.12.2
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run spec-check hooks
+        env:
+          APTORK_STRICT_FORMAT: "1"
+        run: sh .meta/hooks/check-all.sh

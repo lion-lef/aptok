@@ -179,7 +179,8 @@ module Aptork
     upload_media : String? = nil,
     proxy_url : String? = nil,
     public_key : JsonMap? = nil,
-    assertion_methods : Array(JsonMap) = [] of JsonMap
+    assertion_methods : Array(JsonMap) = [] of JsonMap,
+    gateways : Array(String) = [] of String
   ) : JsonMap
     properties = JsonMap{
       "preferredUsername" => json(preferred_username),
@@ -212,6 +213,10 @@ module Aptork
     properties["endpoints"] = json(endpoints) unless endpoints.empty?
     properties["publicKey"] = json(public_key) if public_key
     properties["assertionMethod"] = json(assertion_methods) unless assertion_methods.empty?
+    unless gateways.empty?
+      properties["@context"] = json([ACTIVITYSTREAMS_CONTEXT, FEP_EF61_CONTEXT])
+      properties["gateways"] = json(gateways)
+    end
     Aptork.object(type, id, properties)
   end
 

@@ -24,7 +24,8 @@ module Aptork
     document_loader : DocumentLoader? = nil,
     cross_origin : String = "reject",
     allow_private_address : Bool = false,
-    user_agent : String = DEFAULT_USER_AGENT
+    user_agent : String = DEFAULT_USER_AGENT,
+    gateways : Array(String) = [] of String
 
   record ActorHandleOptions,
     trim_leading_at : Bool = false,

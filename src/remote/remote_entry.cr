@@ -6,6 +6,7 @@ require "set"
 require "digest/sha256"
 require "../vocabulary/vocabulary"
 require "../signatures/signatures"
+require "../portable"
 
 module Aptork
   module Remote
@@ -156,6 +157,17 @@ module Aptork
 
     def self.lookup_object(target : String, loader : DocumentLoader, options : LookupObjectOptions = LookupObjectOptions.new) : JsonMap?
       stripped = target.strip
+      if Aptork.ap_uri?(stripped)
+        gateways = (options.gateways + Aptork.ap_uri_gateways(stripped)).uniq
+        gateways.each do |gateway|
+          url = Aptork.ap_gateway_url(gateway, stripped)
+          if object = loader.call(url)
+            return lookup_object_result(stripped, object, options)
+          end
+        end
+        return nil
+      end
+
       if http_url?(stripped)
         if object = loader.call(stripped)
           return lookup_object_result(stripped, object, options)

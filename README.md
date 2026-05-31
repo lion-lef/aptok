@@ -18,6 +18,7 @@ framework surface for building federated apps:
 - resolver-backed inbox RSA signature verification,
 - signed-fetch access control for actor/object/collection GET routes,
 - remote document loading, object lookup, and collection traversal,
+- FEP-ef61 portable `ap://did...` IDs with compatible gateway routing,
 - authenticated document loaders for signed fetch,
 - in-memory, Redis, and SQL (SQLite/PostgreSQL) KV and queue primitives,
 - OpenMetrics/Prometheus metrics telemetry exporter,
@@ -142,6 +143,7 @@ Currently routed:
 
 - `GET`/`HEAD /.well-known/webfinger?resource=acct:user@example.com`
 - `GET`/`HEAD /.well-known/nodeinfo`
+- `GET`/`HEAD`/`POST /.well-known/apgateway/{did...}/{path}`
 - `GET`/`HEAD /nodeinfo/2.1` when `set_nodeinfo_dispatcher` is configured
 - actor GET/HEAD via `set_actor_dispatcher`
 - object GET/HEAD via `set_object_dispatcher`
@@ -1103,6 +1105,15 @@ parsed.try(&.object_type) # "Ticket"
 parsed.try(&.values)      # {"repo" => "aptork", "ticket_id" => "42"}
 ```
 
+Portable contexts created by `/.well-known/apgateway/{did...}/...` generate
+`ap://did...` actor, inbox, outbox, collection, and object IDs from the same
+route templates. You can also create one explicitly:
+
+```crystal
+portable_ctx = federation.create_context.with_portable_authority("did:key:z6M...")
+portable_ctx.get_actor_uri("alice") # "ap://did:key:z6M.../users/alice"
+```
+
 Route templates support simple expansion (`{id}`) and reserved expansion
 (`{+id}`) for URI-like identifiers. Actor, inbox, followers, following, liked,
 featured, and featured-tags routes follow Fedify's validation and must contain
@@ -1315,6 +1326,21 @@ ctx = federation.create_context
 actor = ctx.lookup_object("@alice@example.com")
 same_actor = ctx.lookup_object("acct:alice@example.com")
 ticket = ctx.lookup_object("https://forge.example/tickets/1")
+```
+
+FEP-ef61 `ap://did...` IDs are dereferenced through gateway hints in the URI or
+explicit lookup options. Compatible gateway HTTP IDs under
+`/.well-known/apgateway/{did...}/...` compare equal to their canonical `ap://`
+IDs:
+
+```crystal
+portable = Aptork.ap_uri("did:key:z6M...", "/objects/1", ["https://example.com"])
+object = ctx.lookup_object(portable)
+
+same = Aptork.ap_uri_equivalent?(
+  portable,
+  "https://example.com/.well-known/apgateway/did:key:z6M.../objects/1"
+)
 ```
 
 For `http`/`https` identifiers, Aptork first fetches the URL directly. If that
@@ -1611,6 +1637,7 @@ actor.liked
 actor.featured
 actor.featured_tags
 actor.streams
+actor.gateways
 actor.discoverable
 actor.indexable
 actor.also_known_as

@@ -73,7 +73,8 @@ module Aptork
 
       actor_id = activity_actor_id(activity)
       return VerificationResult.new(false, "activity actor is missing", result.key_id, result.signer_actor) unless actor_id
-      return result if result.signer_actor == actor_id
+      signer_actor = result.signer_actor
+      return result if signer_actor && proof_owner_matches?(signer_actor, actor_id)
 
       VerificationResult.new(false, "signature key owner does not match activity actor", result.key_id, result.signer_actor)
     end
@@ -99,7 +100,9 @@ module Aptork
 
       owners = valid_key_pairs.map(&.owner).to_set
       required_owners = attributed_identities(activity).to_set
-      missing = required_owners.reject { |owner| owners.includes?(owner) }
+      missing = required_owners.reject do |required|
+        owners.any? { |owner| proof_owner_matches?(owner, required) }
+      end
       unless missing.empty?
         return VerificationResult.new(
           false,
@@ -111,6 +114,13 @@ module Aptork
 
       key_pair = valid_key_pairs.first
       VerificationResult.new(true, key_id: key_pair.id, signer_actor: key_pair.owner)
+    end
+
+    private def proof_owner_matches?(owner : String, required : String) : Bool
+      return true if owner == required
+      return false unless owner.starts_with?("did:")
+
+      Aptork.same_resource_origin?(owner, required)
     end
 
     private def attributed_identities(object : JsonMap) : Array(String)

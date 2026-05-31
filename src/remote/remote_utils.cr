@@ -84,11 +84,7 @@ module Aptork
       object_id = object["id"]?.try(&.as_s?) || object["@id"]?.try(&.as_s?)
       return true unless object_id
 
-      requested = URI.parse(requested_url)
-      actual = URI.parse(object_id)
-      requested.scheme == actual.scheme && requested.host == actual.host && requested.port == actual.port
-    rescue
-      false
+      Aptork.same_resource_id?(requested_url, object_id) || Aptork.same_resource_origin?(requested_url, object_id)
     end
 
     private def self.activitypub_content_type?(value : String) : Bool
@@ -126,18 +122,12 @@ module Aptork
            end
       return nil unless id
 
-      uri = URI.parse(id)
-      return nil unless uri.scheme && uri.host
-      host = uri.host.to_s
-      host = "#{host}:#{uri.port}" if uri.port
-      "#{uri.scheme}://#{host}"
-    rescue
-      nil
+      Aptork.resource_origin(id)
     end
 
     private def self.same_id?(expected_id : String, object : JsonMap) : Bool
       actual = object["id"]?.try(&.as_s?) || object["@id"]?.try(&.as_s?)
-      actual == expected_id
+      !!actual && Aptork.same_resource_id?(expected_id, actual)
     end
   end
 

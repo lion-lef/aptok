@@ -45,8 +45,30 @@ module Aptork
     if prefer_shared_inbox && shared_inbox && !shared_inbox.empty?
       delivery_inbox = shared_inbox
     end
+    gateways = actor_gateways(actor)
+    delivery_inbox = gateway_delivery_uri(delivery_inbox, gateways)
+    shared_inbox = gateway_delivery_uri(shared_inbox, gateways) if shared_inbox
 
     Recipient.new(id, delivery_inbox, [id], shared_inbox)
+  end
+
+  private def self.actor_gateways(actor : JsonMap) : Array(String)
+    value = actor["gateways"]?
+    return [] of String unless value
+
+    entries = value.as_a?
+    return [] of String unless entries
+
+    entries.compact_map { |item| item.as_s?.try { |gateway| Aptork.normalize_ap_gateway(gateway) } }
+  end
+
+  private def self.gateway_delivery_uri(value : String, gateways : Array(String)) : String
+    return value unless Aptork.ap_uri?(value)
+
+    gateway = gateways.first?
+    gateway ? Aptork.ap_gateway_url(gateway, value) : value
+  rescue
+    value
   end
 
   private def self.recipient_excluded_from_inbox_extraction?(recipient : Recipient, inbox : String, exclude_base_uris : Array(String)) : Bool
@@ -56,20 +78,7 @@ module Aptork
   end
 
   private def self.same_uri_origin_for_extraction?(left : String, right : String) : Bool
-    left_origin = uri_origin_for_extraction(left)
-    right_origin = uri_origin_for_extraction(right)
-    !!left_origin && left_origin == right_origin
-  end
-
-  private def self.uri_origin_for_extraction(value : String) : String?
-    uri = URI.parse(value)
-    return nil unless uri.scheme && uri.host
-
-    host = uri.host.to_s
-    host = "#{host}:#{uri.port}" if uri.port
-    "#{uri.scheme}://#{host}"
-  rescue
-    nil
+    Aptork.same_resource_origin?(left, right)
   end
 
   class Federation

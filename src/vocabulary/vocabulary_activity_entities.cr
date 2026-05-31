@@ -144,6 +144,7 @@ module Aptork
       getter shared_inbox : String?
       getter public_key : Object | String | Nil
       getter assertion_methods : Array(Object | String)
+      getter gateways : Array(String)
       getter manually_approves_followers : Bool?
       getter discoverable : Bool?
       getter suspended : Bool?
@@ -190,6 +191,7 @@ module Aptork
         @public_key = self.class.object_property(json, "publicKey")
         @assertion_methods = self.class.object_array_property(json, "assertionMethod")
         @assertion_methods = self.class.object_array_property(json, "assertionMethods") if @assertion_methods.empty?
+        @gateways = self.class.string_array_property(json, "gateways")
         @manually_approves_followers = self.class.bool_property(json, "manuallyApprovesFollowers")
         @discoverable = self.class.bool_property(json, "discoverable")
         @suspended = self.class.bool_property(json, "suspended")

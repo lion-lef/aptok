@@ -35,6 +35,7 @@ applications built on top of it.
 | [FEP-8b32][fep-8b32] | Object Integrity Proofs | ✅ | `eddsa-jcs-2022` Ed25519 proofs (`create_object_proof`, `verify_object_proof?`). |
 | [FEP-521a][fep-521a] | Representing actor's public keys | ✅ | `Multikey` / `publicKeyMultibase` assertion methods (`Aptork.multikey`). |
 | [FEP-8fcf][fep-8fcf] | Followers collection synchronization | ✅ | `Collection-Synchronization` header generation during delivery. |
+| [FEP-ef61][fep-ef61] | Portable objects | ✅ | `ap://did...` helpers, compatible `/.well-known/apgateway/...` routing and lookup, actor `gateways`, and `did:key` proof keys. |
 | [FEP-0837][fep-0837] | Federated Marketplace | ✅ | Proposal/Intent/Commitment/Agreement builders, ValueFlows mapping, and optional strict validators. |
 | [FEP-044f][fep-044f] | Surface-level federation interop hints | 🟡 | `@context` term registered; no dedicated behavior yet. |
 | LD Signatures (RsaSignature2017) | — | ❌ | Only the newer Data Integrity proofs are implemented. |
@@ -52,6 +53,8 @@ applications built on top of it.
   followers, following, and custom collections.
 - **Discovery** — WebFinger and NodeInfo as above; remote document/object
   loading with an authenticated document loader and collection traversal.
+- **Portable objects** — FEP-ef61 `ap://did...` canonical IDs, compatible HTTP
+  gateway routes, gateway-hinted lookup, and `did:key` object proof resolution.
 - **Storage** — pluggable `KvStore` and `MessageQueue` interfaces with in-memory,
   Redis, and SQL (SQLite/Postgres) drivers.
 
@@ -65,6 +68,7 @@ applications built on top of it.
 [fep-8b32]: https://codeberg.org/fediverse/fep/src/branch/main/fep/8b32/fep-8b32.md
 [fep-521a]: https://codeberg.org/fediverse/fep/src/branch/main/fep/521a/fep-521a.md
 [fep-8fcf]: https://codeberg.org/fediverse/fep/src/branch/main/fep/8fcf/fep-8fcf.md
+[fep-ef61]: https://codeberg.org/fediverse/fep/src/branch/main/fep/ef61/fep-ef61.md
 [fep-0837]: https://codeberg.org/fediverse/fep/src/branch/main/fep/0837/fep-0837.md
 [fep-044f]: https://codeberg.org/fediverse/fep/src/branch/main/fep/044f/fep-044f.md
 [fedify]: https://github.com/fedify-dev/fedify

@@ -18,7 +18,7 @@ The columns mean:
 | --- | --- | --- |
 | Type-safe Activity vocabulary objects | ✅ | `src/vocabulary/*` |
 | `Federation` / `Context` objects | ✅ | `src/federation/*` |
-| Fedify-style integration builder | ✅ | `Aptork.create_federation_builder`, `Federation.build` |
+| Crystal-style federation setup DSL | ✅ | `Aptork.federation` |
 | Actor dispatcher | ✅ | `set_actor_dispatcher` |
 | Object dispatcher | ✅ | `set_object_dispatcher` |
 | Outbox dispatcher | ✅ | `set_outbox_dispatcher` |

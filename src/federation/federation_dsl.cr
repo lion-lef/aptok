@@ -1,10 +1,5 @@
 module Aptork
-  # A thin Crystal-style facade over `FederationBuilder`.
-  #
-  # The explicit builder remains the stable low-level API. This class keeps the
-  # same deferred setup semantics while offering short route names that read
-  # naturally inside `Aptork.federation`.
-  class FederationDsl < FederationBuilder
+  class Federation
     private alias DslObjectDispatcher = ObjectDispatcher | ParamObjectDispatcher
     private alias DslCollectionDispatcher = CollectionDispatcher | ParamCollectionDispatcher | ParamCursorCollectionDispatcher
     private alias DslBuiltinCollectionDispatcher = CollectionDispatcher | CursorCollectionDispatcher | ParamCursorCollectionDispatcher
@@ -22,11 +17,11 @@ module Aptork
       set_object_dispatcher(type, path, dispatcher)
     end
 
-    def object(type : String) : BuilderObjectCallbacks
+    def object(type : String) : ObjectCallbacks
       configure_object(type)
     end
 
-    def object(type : String, &block : BuilderObjectCallbacks -> Nil) : self
+    def object(type : String, &block : ObjectCallbacks -> Nil) : self
       callbacks = configure_object(type)
       block.call(callbacks)
       self
@@ -40,11 +35,11 @@ module Aptork
       set_outbox_page_dispatcher(path, dispatcher)
     end
 
-    def outbox(path : String) : BuilderOutboxListeners
+    def outbox(path : String) : OutboxListeners
       set_outbox_listeners(path)
     end
 
-    def outbox(path : String, &block : BuilderOutboxListeners -> Nil) : self
+    def outbox(path : String, &block : OutboxListeners -> Nil) : self
       listeners = set_outbox_listeners(path)
       block.call(listeners)
       self
@@ -54,11 +49,11 @@ module Aptork
       set_inbox_dispatcher(path, dispatcher)
     end
 
-    def inbox(path : String, shared_inbox_path : String? = nil) : BuilderInboxListeners
+    def inbox(path : String, shared_inbox_path : String? = nil) : InboxListeners
       set_inbox_listeners(path, shared_inbox_path)
     end
 
-    def inbox(path : String, shared_inbox_path : String? = nil, &block : BuilderInboxListeners -> Nil) : self
+    def inbox(path : String, shared_inbox_path : String? = nil, &block : InboxListeners -> Nil) : self
       listeners = set_inbox_listeners(path, shared_inbox_path)
       block.call(listeners)
       self
@@ -100,11 +95,11 @@ module Aptork
       set_ordered_collection_page_dispatcher(name, path, dispatcher)
     end
 
-    def collection(name : String) : BuilderCollectionCallbacks
+    def collection(name : String) : CollectionCallbacks
       configure_collection(name)
     end
 
-    def collection(name : String, &block : BuilderCollectionCallbacks -> Nil) : self
+    def collection(name : String, &block : CollectionCallbacks -> Nil) : self
       callbacks = configure_collection(name)
       block.call(callbacks)
       self
@@ -144,20 +139,14 @@ module Aptork
   end
 
   def self.federation(origin : String, **options, &block) : Federation
-    builder = FederationDsl.new
-    with builder yield builder
-    builder.build(origin, **options)
+    federation = Federation.create(origin, **options)
+    with federation yield federation
+    federation
   end
 
   def self.federation(origin : FederationOrigin, **options, &block) : Federation
-    builder = FederationDsl.new
-    with builder yield builder
-    builder.build(origin, **options)
-  end
-
-  def self.create_federation_builder(&block) : FederationDsl
-    builder = FederationDsl.new
-    with builder yield builder
-    builder
+    federation = Federation.create(origin, **options)
+    with federation yield federation
+    federation
   end
 end

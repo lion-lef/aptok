@@ -47,71 +47,9 @@ require "aptork"
 
 ## Federation
 
-```crystal
-federation = Aptork::Federation.create("https://example.com")
-
-federation.set_actor_dispatcher("/users/{identifier}", ->(ctx : Aptork::Context, identifier : String) do
-  Aptork.actor(
-    "Person",
-    ctx.get_actor_uri(identifier),
-    identifier,
-    ctx.get_inbox_uri(identifier),
-    ctx.get_outbox_uri(identifier),
-    name: "Alice",
-    followers: ctx.get_followers_uri(identifier),
-    following: ctx.get_following_uri(identifier),
-    shared_inbox: ctx.get_inbox_uri
-  )
-end)
-
-federation.set_inbox_listeners("/users/{identifier}/inbox", "/inbox")
-  .with_idempotency
-  .on("Create", ->(_ctx : Aptork::Context, activity : Aptork::JsonMap) do
-    puts activity["id"]?
-  end)
-
-ctx = federation.create_context
-actor = ctx.actor("alice")
-```
-
-For larger applications, use the Fedify-style builder to register dispatchers
-and listeners before runtime options are available:
-
-```crystal
-builder = Aptork.create_federation_builder
-
-builder.set_actor_dispatcher("/users/{identifier}", ->(ctx : Aptork::Context, identifier : String) do
-  Aptork.actor(
-    "Person",
-    ctx.get_actor_uri(identifier),
-    identifier,
-    ctx.get_inbox_uri(identifier),
-    ctx.get_outbox_uri(identifier)
-  )
-end)
-
-builder.set_inbox_listeners("/users/{identifier}/inbox", "/inbox")
-  .on("Create", ->(_ctx : Aptork::Context, _activity : Aptork::JsonMap) { nil })
-
-federation = builder.build(
-  "https://example.com",
-  kv: Aptork::MemoryKvStore.new
-)
-```
-
-`Federation.build` is a block-style shortcut around the same builder:
-
-```crystal
-federation = Aptork::Federation.build("https://example.com") do |builder|
-  builder.set_outbox_dispatcher("/users/{identifier}/outbox", ->(_ctx, _identifier) do
-    [] of Aptork::JsonMap
-  end)
-end
-```
-
-`Aptork.federation` wraps the builder with a Crystal-style DSL. The block uses
-the DSL object as its implicit receiver, while still accepting an explicit block
-argument when preferred:
+`Aptork.federation` creates a federation and configures it with a Crystal-style
+DSL. The block uses the federation as its implicit receiver, while still
+accepting an explicit block argument when preferred:
 
 ```crystal
 federation = Aptork.federation("https://example.com") do
@@ -126,11 +64,15 @@ federation = Aptork.federation("https://example.com") do
   end
 
   inbox "/users/{identifier}/inbox", "/inbox" do |routes|
+    routes.with_idempotency
     routes.on "Create", ->(_ctx : Aptork::Context, activity : Aptork::JsonMap) do
       puts activity["id"]?
     end
   end
 end
+
+ctx = federation.create_context
+actor = ctx.actor("alice")
 ```
 
 ## Request Handling
@@ -2776,7 +2718,7 @@ application concerns.
 Implemented now:
 
 - `Federation` registry and `Context` URI helpers,
-- `FederationBuilder` for deferred Fedify-style setup,
+- Crystal-style `Aptork.federation` setup DSL,
 - Fedify-style `FederationOrigin` handle/web origin object,
 - Fedify-style HTTP(S) origin-root validation,
 - optional trailing-slash-insensitive route matching,

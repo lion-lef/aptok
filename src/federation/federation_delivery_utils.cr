@@ -1,4 +1,77 @@
 module Aptork
+  def self.extract_inboxes(
+    recipients : Array(Recipient),
+    prefer_shared_inbox : Bool = false,
+    exclude_base_uris : Array(String) = [] of String
+  ) : Hash(String, ExtractedInbox)
+    inboxes = Hash(String, ExtractedInbox).new
+
+    recipients.each do |recipient|
+      inbox = recipient.inbox
+      shared = false
+      if prefer_shared_inbox
+        if shared_inbox = recipient.shared_inbox
+          unless shared_inbox.empty?
+            inbox = shared_inbox
+            shared = true
+          end
+        end
+      end
+
+      next if recipient_excluded_from_inbox_extraction?(recipient, inbox, exclude_base_uris)
+
+      actor_ids = recipient.synchronization_actor_ids
+      if existing = inboxes[inbox]?
+        inboxes[inbox] = ExtractedInbox.new((existing.actor_ids + actor_ids).uniq, existing.shared_inbox || shared)
+      else
+        inboxes[inbox] = ExtractedInbox.new(actor_ids.uniq, shared)
+      end
+    end
+
+    inboxes
+  end
+
+  def self.recipient_from_actor(actor : Vocab::Actor, prefer_shared_inbox : Bool = false) : Recipient?
+    recipient_from_actor(actor.to_json_ld, prefer_shared_inbox)
+  end
+
+  def self.recipient_from_actor(actor : JsonMap, prefer_shared_inbox : Bool = false) : Recipient?
+    id = actor["id"]?.try(&.as_s?) || actor["@id"]?.try(&.as_s?)
+    inbox = actor["inbox"]?.try(&.as_s?)
+    return nil unless id && inbox && !id.empty? && !inbox.empty?
+
+    shared_inbox = actor["endpoints"]?.try(&.as_h["sharedInbox"]?.try(&.as_s?))
+    delivery_inbox = inbox
+    if prefer_shared_inbox && shared_inbox && !shared_inbox.empty?
+      delivery_inbox = shared_inbox
+    end
+
+    Recipient.new(id, delivery_inbox, [id], shared_inbox)
+  end
+
+  private def self.recipient_excluded_from_inbox_extraction?(recipient : Recipient, inbox : String, exclude_base_uris : Array(String)) : Bool
+    exclude_base_uris.any? do |base|
+      same_uri_origin_for_extraction?(recipient.id, base) || same_uri_origin_for_extraction?(inbox, base)
+    end
+  end
+
+  private def self.same_uri_origin_for_extraction?(left : String, right : String) : Bool
+    left_origin = uri_origin_for_extraction(left)
+    right_origin = uri_origin_for_extraction(right)
+    !!left_origin && left_origin == right_origin
+  end
+
+  private def self.uri_origin_for_extraction(value : String) : String?
+    uri = URI.parse(value)
+    return nil unless uri.scheme && uri.host
+
+    host = uri.host.to_s
+    host = "#{host}:#{uri.port}" if uri.port
+    "#{uri.scheme}://#{host}"
+  rescue
+    nil
+  end
+
   class Federation
     private def strip_trailing_slash(value : String) : String
       value.ends_with?("/") ? value[0, value.size - 1] : value

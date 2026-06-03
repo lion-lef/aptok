@@ -30,6 +30,8 @@ framework surface for building federated apps:
   ticket dependency, merge request, typed activity, and strict validation helpers,
 - marketplace offer/service/listing and FEP-0837 proposal/agreement builder and
   validation helpers,
+- FEP-ae0c relay client and server helpers (Mastodon- and LitePub-style) for
+  classic and portable actors,
 - a [`FEDERATION.md`](FEDERATION.md) (FEP-67ff) describing the implementation.
 
 It is distributed under the [0BSD license](LICENSE). It is not a full Fedify port yet. The current implementation focuses on the
@@ -2754,6 +2756,86 @@ These helpers build JSON-LD vocabulary objects. Routing, persistence,
 negotiation state machines, payment execution, and transaction settlement remain
 application concerns.
 
+## Relays (FEP-ae0c)
+
+[FEP-ae0c][fep-ae0c] relays rebroadcast public activities to every subscriber, so
+small servers can discover content beyond their own follow graph. `Aptok::Relay`
+implements both documented styles: Mastodon-style (subscribe by following the
+public collection; content is forwarded unchanged) and LitePub-style (subscribe
+by following the relay actor; the relay sends a reciprocal `Follow` and
+rebroadcasts content as an `Announce`). Every helper canonicalizes actor IDs with
+FEP-ef61 in mind, so the same relay works for classic `https://` actors and
+portable `ap://did...` actors without special-casing.
+
+### Relay clients
+
+A client subscribes to a relay by sending a `Follow`. Pick the protocol the relay
+speaks:
+
+```crystal
+# Mastodon-style: follow the public collection.
+mastodon = Aptok::Relay.subscribe(
+  "https://blog.example/follows/1",
+  "https://blog.example/actor",
+  "https://relay.example/actor"
+)
+
+# LitePub-style: follow the relay actor itself.
+litepub = Aptok::Relay.subscribe(
+  "https://blog.example/follows/2",
+  "https://blog.example/actor",
+  "https://relay.example/relay",
+  Aptok::Relay::Protocol::LitePub
+)
+```
+
+Unsubscribe by undoing the original `Follow`, and (LitePub) publish to the relay
+with an `Announce`:
+
+```crystal
+undo = Aptok::Relay.unsubscribe(
+  "https://blog.example/undos/1",
+  "https://blog.example/actor",
+  mastodon
+)
+
+announce = Aptok::Relay.announce(
+  "https://blog.example/announces/1",
+  "https://blog.example/relay",
+  "https://blog.example/posts/1",
+  "https://relay.example/relay/followers"
+)
+```
+
+### Relay servers
+
+A relay server tracks subscribers in a `KvStore`-backed `Subscriptions` registry
+and drives subscription and fan-out with `Server`. Inbound `Follow`/`Undo`
+activities are classified, acknowledged with an `Accept` (plus a reciprocal
+`Follow` for LitePub), and relayable content (`Create`/`Update`/`Delete`/`Move`/
+`Announce`) is forwarded to every subscriber except its origin:
+
+```crystal
+relay_id = ctx.get_actor_uri("relay")
+subscriptions = Aptok::Relay::Subscriptions.new(Aptok::MemoryKvStore.new, relay_id)
+server = Aptok::Relay::Server.new(relay_id, "relay", subscriptions)
+
+# Handle an inbound subscription or unsubscription (sends the Accept/Follow).
+result = server.handle(ctx, inbound_activity)
+result.subscribed? # => true
+
+# Fan a public activity out to subscribers (never echoed back to its origin).
+server.relay(ctx, incoming_create)
+```
+
+`Subscriptions` resolves portable `ap://` inboxes to gateway delivery URLs
+automatically and de-duplicates relayed activity IDs, while `Server#relay`
+forwards each activity unchanged — preserving any existing LD signature on it and
+adding the relay's own HTTP Signature. The relay therefore never needs to
+generate LD signatures itself.
+
+[fep-ae0c]: https://codeberg.org/fediverse/fep/src/branch/main/fep/ae0c/fep-ae0c.md
+
 ## Current Scope Compared To Fedify
 
 Implemented now:
@@ -2809,6 +2891,8 @@ Implemented now:
   ticket-tracker, patch-tracker, merge-request, and typed activity builders,
 - marketplace offer/service/listing plus FEP-0837 proposal/agreement builders
   and strict validators,
+- FEP-ae0c relay client/server helpers with a subscription registry and
+  origin-excluding fan-out,
 - Ed25519/Multikey `eddsa-jcs-2022` Object Integrity Proof helpers,
 - remote Multikey fetching/caching for proof verification,
 - RSA-backed `DataIntegrityProof` helpers for local canonical JSON proofs,

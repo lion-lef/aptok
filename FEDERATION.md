@@ -37,8 +37,9 @@ applications built on top of it.
 | [FEP-8fcf][fep-8fcf] | Followers collection synchronization | ✅ | `Collection-Synchronization` header generation during delivery. |
 | [FEP-ef61][fep-ef61] | Portable objects | ✅ | `ap://did...` helpers, compatible `/.well-known/apgateway/...` routing and lookup, actor `gateways`, and `did:key` proof keys. |
 | [FEP-0837][fep-0837] | Federated Marketplace | ✅ | Proposal/Intent/Commitment/Agreement builders, ValueFlows mapping, and optional strict validators. |
+| [FEP-ae0c][fep-ae0c] | Relay protocols (Mastodon & LitePub) | ✅ | `Aptok::Relay` client/server helpers, `Subscriptions` registry, and origin-excluding fan-out for classic and portable actors. |
 | [FEP-044f][fep-044f] | Surface-level federation interop hints | 🟡 | `@context` term registered; no dedicated behavior yet. |
-| LD Signatures (RsaSignature2017) | — | ❌ | Only the newer Data Integrity proofs are implemented. |
+| LD Signatures (RsaSignature2017) | — | ❌ | Only the newer Data Integrity proofs are implemented. Relays forward activities unchanged, preserving any existing LD signature. |
 
 ## ActivityPub implementation details
 
@@ -55,6 +56,11 @@ applications built on top of it.
   loading with an authenticated document loader and collection traversal.
 - **Portable objects** — FEP-ef61 `ap://did...` canonical IDs, compatible HTTP
   gateway routes, gateway-hinted lookup, and `did:key` object proof resolution.
+- **Relays** — FEP-ae0c relay client and server helpers (`Aptok::Relay`):
+  subscription/unsubscription/publish builders, inbound `Follow`/`Undo`
+  classification, a `KvStore`-backed `Subscriptions` registry, and
+  origin-excluding content fan-out. Works for classic and portable actors;
+  forwarded activities keep their original signatures.
 - **Storage** — pluggable `KvStore` and `MessageQueue` interfaces with in-memory,
   Redis, and SQL (SQLite/Postgres) drivers.
 
@@ -70,6 +76,7 @@ applications built on top of it.
 [fep-8fcf]: https://codeberg.org/fediverse/fep/src/branch/main/fep/8fcf/fep-8fcf.md
 [fep-ef61]: https://codeberg.org/fediverse/fep/src/branch/main/fep/ef61/fep-ef61.md
 [fep-0837]: https://codeberg.org/fediverse/fep/src/branch/main/fep/0837/fep-0837.md
+[fep-ae0c]: https://codeberg.org/fediverse/fep/src/branch/main/fep/ae0c/fep-ae0c.md
 [fep-044f]: https://codeberg.org/fediverse/fep/src/branch/main/fep/044f/fep-044f.md
 [fedify]: https://github.com/fedify-dev/fedify
 [forgefed]: https://forgefed.org/spec/

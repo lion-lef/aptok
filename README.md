@@ -18,6 +18,8 @@ framework surface for building federated apps:
 - resolver-backed inbox RSA signature verification,
 - signed-fetch access control for actor/object/collection GET routes,
 - remote document loading, object lookup, and collection traversal,
+- private `fed.internal` gateway helpers for ACL-gated local-name resolution
+  and actor caching,
 - FEP-ef61 portable `ap://did...` IDs with compatible gateway routing,
 - authenticated document loaders for signed fetch,
 - in-memory, Redis, and SQL (SQLite/PostgreSQL) KV and queue primitives,
@@ -1184,6 +1186,11 @@ federation = Aptok::Federation.create(
 ```
 
 Custom federation document loaders are responsible for their own fetch policy.
+For private `fed.internal` deployments, the `Aptok::PrivateGateway` helpers
+combine an ACL, local-name URL rewriting, KV-backed document caching, and
+actor caching. See
+[`docs/PRIVATE_FED_INTERNAL_GATEWAY.md`](docs/PRIVATE_FED_INTERNAL_GATEWAY.md)
+and [`examples/fed_internal_gateway.cr`](examples/fed_internal_gateway.cr).
 
 Like Fedify's `lookupObject()`, `LookupObjectOptions` can carry a per-call
 loader. The context helpers use this loader for lookup and object verification
